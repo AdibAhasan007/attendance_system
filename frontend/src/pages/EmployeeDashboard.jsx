@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 import Calendar from 'react-calendar'; 
 import 'react-calendar/dist/Calendar.css'; 
 import { 
-  LogOut, User, Calendar as CalendarIcon, 
-  CheckCircle, AlertTriangle, XCircle, BarChart3
+  LogOut, User, Calendar as CalendarIcon, CheckCircle, AlertTriangle, 
+  XCircle, BarChart3, TrendingUp, Award, Clock, Sparkles
 } from 'lucide-react';
 
 const EmployeeDashboard = () => {
@@ -23,11 +23,10 @@ const EmployeeDashboard = () => {
     loadHistory();
   }, []);
 
-  // Recalculate stats whenever history updates
   useEffect(() => {
     if (history.length > 0) {
-      calculateMonthlyStats(new Date()); // Calculate for current month initially
-      handleDateClick(new Date());     // Select today
+      calculateMonthlyStats(new Date());
+      handleDateClick(new Date());
     }
   }, [history]);
 
@@ -45,18 +44,14 @@ const EmployeeDashboard = () => {
     try {
       const res = await employeeService.getHistory();
       
-      // ✅ FIX 1: DEDUPLICATE HISTORY (Keep only the first log per day)
-      // This prevents "3 Presents" for 1 day in the stats.
       const uniqueMap = new Map();
       res.data.forEach(log => {
-        // Assume log.date_only is "YYYY-MM-DD"
         if (!uniqueMap.has(log.date_only)) {
           uniqueMap.set(log.date_only, log);
         }
       });
       
       const uniqueHistory = Array.from(uniqueMap.values());
-      console.log("Unique Daily Logs:", uniqueHistory); // Debugging
       setHistory(uniqueHistory);
 
     } catch (err) {
@@ -64,7 +59,6 @@ const EmployeeDashboard = () => {
     }
   };
 
-  // ✅ HELPER: Format Date to "YYYY-MM-DD" safely
   const formatDateKey = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -79,9 +73,7 @@ const EmployeeDashboard = () => {
     setTodayLog(log || null);
   };
 
-  // ✅ FIX 2: ROBUST STATS CALCULATION
   const calculateMonthlyStats = (referenceDate) => {
-    // We calculate stats for the MONTH currently being viewed (referenceDate)
     const viewYear = referenceDate.getFullYear();
     const viewMonth = referenceDate.getMonth();
 
@@ -91,7 +83,6 @@ const EmployeeDashboard = () => {
       return (m - 1) === viewMonth && y === viewYear;
     });
 
-    // Count Present & Late (Case Insensitive)
     let presentCount = 0;
     let lateCount = 0;
 
@@ -101,11 +92,9 @@ const EmployeeDashboard = () => {
         else if (status === 'present') presentCount++;
     });
 
-    // Calculate Absent Days (Business Days Passed - Attended Days)
     let workingDaysCount = 0;
     const now = new Date();
     
-    // Determine the last day to count (Today if current month, else end of month)
     const isCurrentMonth = viewMonth === now.getMonth() && viewYear === now.getFullYear();
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const limitDay = isCurrentMonth ? now.getDate() : daysInMonth;
@@ -113,14 +102,12 @@ const EmployeeDashboard = () => {
     for (let i = 1; i <= limitDay; i++) {
       const dayCheck = new Date(viewYear, viewMonth, i);
       const dayOfWeek = dayCheck.getDay();
-      // Exclude Sun(0) and Sat(6)
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         workingDaysCount++;
       }
     }
 
     const totalAttended = presentCount + lateCount;
-    // Absent cannot be negative
     const absentCount = Math.max(0, workingDaysCount - totalAttended);
 
     setStats({ present: presentCount, late: lateCount, absent: absentCount });
@@ -135,16 +122,14 @@ const EmployeeDashboard = () => {
       const log = history.find(l => l.date_only === dateKey);
       
       if (log) {
-        // Case insensitive check
         const isLate = log.status && log.status.toLowerCase() === 'late';
         return isLate 
-          ? 'bg-orange-100 text-orange-600 font-bold rounded-md' 
-          : 'bg-green-100 text-green-600 font-bold rounded-md';
+          ? 'bg-orange-100 text-orange-600 font-bold rounded-lg hover:bg-orange-200' 
+          : 'bg-green-100 text-green-600 font-bold rounded-lg hover:bg-green-200';
       }
 
-      // Check for Absent
       if (date < today && date.getDay() !== 0 && date.getDay() !== 6) {
-        return 'bg-red-100 text-red-600 font-bold rounded-md';
+        return 'bg-red-50 text-red-400 rounded-lg';
       }
     }
     return null;
@@ -155,73 +140,228 @@ const EmployeeDashboard = () => {
     navigate('/');
   };
 
-  if (!profile) return <div className="p-8 text-center">Loading Profile...</div>;
+  if (!profile) return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-purple-600 font-semibold">Loading your profile...</p>
+      </div>
+    </div>
+  );
+
+  const attendanceScore = stats.present + stats.late > 0 
+    ? Math.round((stats.present / (stats.present + stats.late + stats.absent)) * 100) 
+    : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Profile */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center">
-            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600"><User size={32} /></div>
-            <h2 className="text-xl font-bold text-slate-800">{profile.name}</h2>
-            <p className="text-sm text-slate-500 font-mono mb-4">{profile.employee_id}</p>
-            <div className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase">{profile.role}</div>
-          </div>
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-red-500 font-bold p-4 hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100 bg-white shadow-sm"><LogOut size={18}/> Logout</button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4 md:p-8">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-300/20 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-300/20 rounded-full filter blur-3xl"></div>
+      </div>
 
-        {/* Right Column: Calendar */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><CalendarIcon className="text-blue-600"/> My Attendance</h2>
-              <div className="flex gap-3 text-xs font-bold">
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-green-100 border border-green-500 rounded-full"></span> Present</div>
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-orange-100 border border-orange-500 rounded-full"></span> Late</div>
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-red-100 border border-red-500 rounded-full"></span> Absent</div>
-              </div>
-            </div>
-            <div className="calendar-wrapper custom-calendar">
-              <Calendar 
-                onChange={handleDateClick} 
-                // Recalculate stats when user changes the month view
-                onActiveStartDateChange={({ activeStartDate }) => calculateMonthlyStats(activeStartDate)}
-                value={selectedDate} 
-                tileClassName={getTileClassName} 
-                className="w-full border-none font-sans text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="text-sm font-bold text-slate-500 uppercase mb-4">Details for {selectedDate.toDateString()}</h3>
-            {todayLog ? (
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-full ${todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>{todayLog.status && todayLog.status.toLowerCase() === 'late' ? <AlertTriangle size={24}/> : <CheckCircle size={24}/>}</div>
-                <div>
-                  <h4 className="font-bold text-lg text-slate-800">You were {todayLog.status}</h4>
-                  <p className="text-slate-500 text-sm">Punch In Time: <span className="font-mono text-slate-700 font-bold">
-                    {new Date(todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span></p>
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Header */}
+        <header className="backdrop-blur-xl bg-white/80 rounded-3xl p-6 md:p-8 mb-8 shadow-2xl border border-white/50">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 rounded-3xl flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform">
+                  <User size={40} className="text-white" />
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
+                  <CheckCircle size={16} className="text-white" />
                 </div>
               </div>
-            ) : (<p className="text-slate-400 italic">No attendance record for this day.</p>)}
+              <div>
+                <h1 className="text-3xl md:text-4xl font-black text-slate-800 mb-1">{profile.name}</h1>
+                <p className="text-slate-500 font-mono text-sm mb-2">{profile.employee_id}</p>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-300">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span className="text-purple-700 font-bold text-sm uppercase tracking-wide">{profile.role}</span>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleLogout} 
+              className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl transition-all transform hover:scale-105 flex items-center gap-3"
+            >
+              <LogOut size={20}/> 
+              <span>Logout</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Stats */}
+          <div className="space-y-6">
+            {/* Performance Score */}
+            <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500 to-pink-500 p-8 rounded-3xl shadow-2xl border border-white/20 text-white">
+              <div className="flex items-center gap-3 mb-4">
+                <Award className="w-6 h-6" />
+                <h3 className="text-lg font-bold">Performance Score</h3>
+              </div>
+              <div className="relative pt-4">
+                <div className="text-6xl font-black mb-2">{attendanceScore}%</div>
+                <p className="text-purple-100 text-sm">This Month</p>
+              </div>
+            </div>
+
+            {/* Monthly Stats */}
+            <div className="backdrop-blur-xl bg-white/80 p-6 rounded-3xl shadow-2xl border border-white/50">
+              <div className="flex items-center gap-2 mb-6">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-bold text-slate-800">Monthly Summary</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500 rounded-xl">
+                      <CheckCircle size={20} className="text-white" />
+                    </div>
+                    <span className="font-semibold text-slate-700">Present</span>
+                  </div>
+                  <div className="text-3xl font-black text-green-600">{stats.present}</div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-500 rounded-xl">
+                      <AlertTriangle size={20} className="text-white" />
+                    </div>
+                    <span className="font-semibold text-slate-700">Late</span>
+                  </div>
+                  <div className="text-3xl font-black text-orange-600">{stats.late}</div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl border border-red-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500 rounded-xl">
+                      <XCircle size={20} className="text-white" />
+                    </div>
+                    <span className="font-semibold text-slate-700">Absent</span>
+                  </div>
+                  <div className="text-3xl font-black text-red-600">{stats.absent}</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Stats Section */}
-          <div className="bg-slate-800 text-white p-6 rounded-2xl shadow-lg">
-            <h3 className="font-bold mb-4 flex items-center gap-2 text-slate-200"><BarChart3 size={20}/> Monthly Summary</h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-green-400 mb-1">{stats.present}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><CheckCircle size={12}/> Present</div></div>
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-orange-400 mb-1">{stats.late}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><AlertTriangle size={12}/> Late</div></div>
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-red-400 mb-1">{stats.absent}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><XCircle size={12}/> Absent</div></div>
+          {/* Right Column: Calendar & Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Calendar */}
+            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-2xl border border-white/50">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
+                    <CalendarIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800">Attendance Calendar</h2>
+                </div>
+                <div className="flex gap-4 text-xs font-bold">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-green-500 rounded-full"></span> 
+                    <span className="text-slate-600">Present</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-orange-500 rounded-full"></span> 
+                    <span className="text-slate-600">Late</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-red-400 rounded-full"></span> 
+                    <span className="text-slate-600">Absent</span>
+                  </div>
+                </div>
+              </div>
+              <div className="calendar-wrapper modern-calendar">
+                <Calendar 
+                  onChange={handleDateClick} 
+                  onActiveStartDateChange={({ activeStartDate }) => calculateMonthlyStats(activeStartDate)}
+                  value={selectedDate} 
+                  tileClassName={getTileClassName} 
+                  className="w-full border-none font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Selected Date Details */}
+            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-2xl border border-white/50">
+              <div className="flex items-center gap-2 mb-6">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <h3 className="text-xl font-bold text-slate-800">
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </h3>
+              </div>
+              {todayLog ? (
+                <div className={`p-6 rounded-2xl border-2 ${
+                  todayLog.status && todayLog.status.toLowerCase() === 'late' 
+                    ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300' 
+                    : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
+                }`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`p-4 rounded-2xl ${
+                      todayLog.status && todayLog.status.toLowerCase() === 'late' 
+                        ? 'bg-orange-500' 
+                        : 'bg-green-500'
+                    }`}>
+                      {todayLog.status && todayLog.status.toLowerCase() === 'late' 
+                        ? <AlertTriangle size={32} className="text-white" /> 
+                        : <CheckCircle size={32} className="text-white" />
+                      }
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-2xl font-bold text-slate-800 mb-2">
+                        Status: {todayLog.status}
+                      </h4>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Clock size={16} />
+                        <span className="font-mono font-bold text-lg">
+                          {new Date(todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <XCircle size={48} className="text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-400 font-medium">No attendance record for this day</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .modern-calendar {
+          font-family: inherit;
+        }
+        .modern-calendar .react-calendar {
+          border-radius: 1rem;
+          padding: 1rem;
+        }
+        .modern-calendar .react-calendar__tile {
+          padding: 1rem;
+          border-radius: 0.75rem;
+          transition: all 0.2s;
+        }
+        .modern-calendar .react-calendar__tile:hover {
+          transform: scale(1.05);
+        }
+        .modern-calendar .react-calendar__tile--now {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          font-weight: bold;
+        }
+        .modern-calendar .react-calendar__month-view__days__day--weekend {
+          color: #cbd5e1;
+        }
+      `}</style>
     </div>
   );
 };
+
 export default EmployeeDashboard;
