@@ -1,365 +1,351 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { employeeService } from '../services/api';
 import toast from 'react-hot-toast';
-import Calendar from 'react-calendar'; 
-import 'react-calendar/dist/Calendar.css'; 
+import { useNavigate } from 'react-router-dom';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { 
-  LogOut, User, Calendar as CalendarIcon, CheckCircle, AlertTriangle, 
-  XCircle, BarChart3, TrendingUp, Award, Clock, Sparkles
+  User, LogOut, MapPin, Clock, Calendar as CalIcon, TrendingUp, Award, 
+  Target, CheckCircle, XCircle, Zap, Menu, Activity, Star
 } from 'lucide-react';
 
 const EmployeeDashboard = () => {
   const [profile, setProfile] = useState(null);
-  const [history, setHistory] = useState([]); 
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [todayLog, setTodayLog] = useState(null); 
-  const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
-
+  const [attendance, setAttendance] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadProfile();
-    loadHistory();
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (history.length > 0) {
-      calculateMonthlyStats(new Date());
-      handleDateClick(new Date());
-    }
-  }, [history]);
-
-  const loadProfile = async () => {
+  const loadData = async () => {
     try {
-      const res = await employeeService.getProfile();
-      setProfile(res.data);
+      const [profRes, attRes] = await Promise.all([
+        employeeService.getProfile(),
+        employeeService.getAttendance()
+      ]);
+      setProfile(profRes.data);
+      setAttendance(attRes.data);
     } catch (err) {
-      toast.error("Session expired");
-      navigate('/');
+      toast.error("Failed to load data");
     }
   };
 
-  const loadHistory = async () => {
-    try {
-      const res = await employeeService.getHistory();
-      
-      const uniqueMap = new Map();
-      res.data.forEach(log => {
-        if (!uniqueMap.has(log.date_only)) {
-          uniqueMap.set(log.date_only, log);
+  const handleCheckIn = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          await employeeService.checkIn(position.coords.latitude, position.coords.longitude);
+          toast.success("✅ Checked In Successfully!");
+          loadData();
+        } catch (err) {
+          toast.error(err.response?.data?.detail || "Check-in failed");
         }
-      });
-      
-      const uniqueHistory = Array.from(uniqueMap.values());
-      setHistory(uniqueHistory);
+      },
+      () => toast.error("Unable to get location")
+    );
+  };
 
-    } catch (err) {
-      console.error("Failed to load history");
+  const handleCheckOut = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported");
+      return;
     }
-  };
-
-  const formatDateKey = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const handleDateClick = (date) => {
-    setSelectedDate(date);
-    const dateKey = formatDateKey(date);
-    const log = history.find(h => h.date_only === dateKey);
-    setTodayLog(log || null);
-  };
-
-  const calculateMonthlyStats = (referenceDate) => {
-    const viewYear = referenceDate.getFullYear();
-    const viewMonth = referenceDate.getMonth();
-
-    const thisMonthLogs = history.filter(log => {
-      if (!log.date_only) return false;
-      const [y, m, d] = log.date_only.split('-').map(Number);
-      return (m - 1) === viewMonth && y === viewYear;
-    });
-
-    let presentCount = 0;
-    let lateCount = 0;
-
-    thisMonthLogs.forEach(l => {
-        const status = l.status ? l.status.toLowerCase() : "";
-        if (status === 'late') lateCount++;
-        else if (status === 'present') presentCount++;
-    });
-
-    let workingDaysCount = 0;
-    const now = new Date();
-    
-    const isCurrentMonth = viewMonth === now.getMonth() && viewYear === now.getFullYear();
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const limitDay = isCurrentMonth ? now.getDate() : daysInMonth;
-
-    for (let i = 1; i <= limitDay; i++) {
-      const dayCheck = new Date(viewYear, viewMonth, i);
-      const dayOfWeek = dayCheck.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDaysCount++;
-      }
-    }
-
-    const totalAttended = presentCount + lateCount;
-    const absentCount = Math.max(0, workingDaysCount - totalAttended);
-
-    setStats({ present: presentCount, late: lateCount, absent: absentCount });
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          await employeeService.checkOut(position.coords.latitude, position.coords.longitude);
+          toast.success("👋 Checked Out Successfully!");
+          loadData();
+        } catch (err) {
+          toast.error(err.response?.data?.detail || "Check-out failed");
+        }
+      },
+      () => toast.error("Unable to get location")
+    );
   };
 
   const getTileClassName = ({ date, view }) => {
     if (view === 'month') {
-      const dateKey = formatDateKey(date); 
-      const today = new Date();
-      today.setHours(0,0,0,0);
+      const dayLogs = attendance.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return logDate.getDate() === date.getDate() &&
+               logDate.getMonth() === date.getMonth() &&
+               logDate.getFullYear() === date.getFullYear();
+      });
 
-      const log = history.find(l => l.date_only === dateKey);
-      
-      if (log) {
-        const isLate = log.status && log.status.toLowerCase() === 'late';
-        return isLate 
-          ? 'bg-orange-100 text-orange-600 font-bold rounded-lg hover:bg-orange-200' 
-          : 'bg-green-100 text-green-600 font-bold rounded-lg hover:bg-green-200';
-      }
-
-      if (date < today && date.getDay() !== 0 && date.getDay() !== 6) {
-        return 'bg-red-50 text-red-400 rounded-lg';
+      if (dayLogs.length > 0) {
+        const isLate = dayLogs.some(log => log.status === 'Late');
+        return isLate ? 'bg-orange-100 text-orange-600 font-bold border-2 border-orange-300' : 'bg-green-100 text-green-600 font-bold border-2 border-green-300';
       }
     }
     return null;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
-  };
-
-  if (!profile) return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-purple-600 font-semibold">Loading your profile...</p>
-      </div>
-    </div>
-  );
-
-  const attendanceScore = stats.present + stats.late > 0 
-    ? Math.round((stats.present / (stats.present + stats.late + stats.absent)) * 100) 
-    : 0;
+  const totalPresent = attendance.filter(a => a.type === 'check_in').length;
+  const totalLate = attendance.filter(a => a.status === 'Late').length;
+  const attendanceRate = attendance.length > 0 ? Math.round((totalPresent / 30) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4 md:p-8">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-300/20 rounded-full filter blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-300/20 rounded-full filter blur-3xl"></div>
-      </div>
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-emerald-50 overflow-hidden">
+      {/* Sidebar */}
+      <aside className={`${sidebarOpen ? 'w-80' : 'w-20'} bg-gradient-to-b from-[#00755e] to-emerald-800 text-white transition-all duration-300 flex flex-col shadow-2xl`}>
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+              <User className="w-6 h-6" />
+            </div>
+            {sidebarOpen && (
+              <div>
+                <h2 className="font-black text-lg">AttendancePro</h2>
+                <p className="text-xs text-emerald-200">Employee Portal</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Header */}
-        <header className="backdrop-blur-xl bg-white/80 rounded-3xl p-6 md:p-8 mb-8 shadow-2xl border border-white/50">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 rounded-3xl flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform">
-                  <User size={40} className="text-white" />
+        {/* Profile Card */}
+        {sidebarOpen && profile && (
+          <div className="p-6 border-b border-white/10">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-[#00755e] rounded-2xl flex items-center justify-center">
+                  <span className="text-2xl font-black text-white">{profile.name?.charAt(0)}</span>
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
-                  <CheckCircle size={16} className="text-white" />
+                <div>
+                  <h3 className="font-bold text-lg text-white">{profile.name}</h3>
+                  <p className="text-xs text-emerald-200">ID: {profile.employee_id}</p>
                 </div>
               </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-slate-800 mb-1">{profile.name}</h1>
-                <p className="text-slate-500 font-mono text-sm mb-2">{profile.employee_id}</p>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-300">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                  <span className="text-purple-700 font-bold text-sm uppercase tracking-wide">{profile.role}</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Award className="w-4 h-4 text-emerald-300" />
+                  <span className="text-emerald-100">Role: {profile.role || 'Staff'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Activity className="w-4 h-4 text-emerald-300" />
+                  <span className="text-emerald-100">Status: Active</span>
                 </div>
               </div>
             </div>
-            
-            <button 
-              onClick={handleLogout} 
-              className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl transition-all transform hover:scale-105 flex items-center gap-3"
-            >
-              <LogOut size={20}/> 
-              <span>Logout</span>
-            </button>
+          </div>
+        )}
+
+        {/* Stats */}
+        {sidebarOpen && (
+          <div className="flex-1 p-6 space-y-4">
+            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle className="w-5 h-5 text-green-300" />
+                <h4 className="text-sm font-semibold text-emerald-200">Attendance Rate</h4>
+              </div>
+              <p className="text-4xl font-black text-white mb-2">{attendanceRate}%</p>
+              <div className="w-full bg-white/20 rounded-full h-3">
+                <div className="bg-gradient-to-r from-green-400 to-emerald-300 rounded-full h-3 transition-all duration-500" style={{ width: `${attendanceRate}%` }}></div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="w-4 h-4 text-yellow-300" />
+                  <span className="text-xs text-emerald-200">Present</span>
+                </div>
+                <p className="text-2xl font-black text-white">{totalPresent}</p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <XCircle className="w-4 h-4 text-orange-300" />
+                  <span className="text-xs text-emerald-200">Late</span>
+                </div>
+                <p className="text-2xl font-black text-white">{totalLate}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Toggle & Logout */}
+        <div className="p-4 border-t border-white/10 space-y-2">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => { localStorage.clear(); navigate('/'); }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            {sidebarOpen && <span className="text-sm font-semibold">Logout</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto p-8">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-xl border border-white/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-black text-slate-800 mb-1">My Attendance</h1>
+                <p className="text-slate-500 text-sm">Track your presence and performance</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="backdrop-blur-md bg-gradient-to-r from-[#00755e]/10 to-emerald-500/10 px-5 py-3 rounded-xl border border-[#00755e]/20">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#00755e]" />
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Performance Score</p>
+                      <p className="text-2xl font-black text-[#00755e]">{attendanceRate}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Stats */}
-          <div className="space-y-6">
-            {/* Performance Score */}
-            <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500 to-pink-500 p-8 rounded-3xl shadow-2xl border border-white/20 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <Award className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Performance Score</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Check In/Out Actions */}
+          <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
+                <Zap className="w-6 h-6 text-white" />
               </div>
-              <div className="relative pt-4">
-                <div className="text-6xl font-black mb-2">{attendanceScore}%</div>
-                <p className="text-purple-100 text-sm">This Month</p>
-              </div>
+              <h2 className="text-xl font-bold text-slate-800">Quick Actions</h2>
             </div>
 
-            {/* Monthly Stats */}
-            <div className="backdrop-blur-xl bg-white/80 p-6 rounded-3xl shadow-2xl border border-white/50">
-              <div className="flex items-center gap-2 mb-6">
-                <BarChart3 className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-bold text-slate-800">Monthly Summary</h3>
+            <div className="space-y-4">
+              <button 
+                onClick={handleCheckIn} 
+                className="w-full bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3"
+              >
+                <CheckCircle className="w-6 h-6" />
+                <span className="text-lg">Check In</span>
+              </button>
+
+              <button 
+                onClick={handleCheckOut} 
+                className="w-full bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3"
+              >
+                <Clock className="w-6 h-6" />
+                <span className="text-lg">Check Out</span>
+              </button>
+            </div>
+
+            {/* Quick Info */}
+            <div className="mt-8 space-y-3">
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-200">
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="w-4 h-4 text-[#00755e]" />
+                  <span className="text-slate-600 font-medium">Location tracking enabled</span>
+                </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500 rounded-xl">
-                      <CheckCircle size={20} className="text-white" />
-                    </div>
-                    <span className="font-semibold text-slate-700">Present</span>
-                  </div>
-                  <div className="text-3xl font-black text-green-600">{stats.present}</div>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-500 rounded-xl">
-                      <AlertTriangle size={20} className="text-white" />
-                    </div>
-                    <span className="font-semibold text-slate-700">Late</span>
-                  </div>
-                  <div className="text-3xl font-black text-orange-600">{stats.late}</div>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl border border-red-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-500 rounded-xl">
-                      <XCircle size={20} className="text-white" />
-                    </div>
-                    <span className="font-semibold text-slate-700">Absent</span>
-                  </div>
-                  <div className="text-3xl font-black text-red-600">{stats.absent}</div>
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl border border-blue-200">
+                <div className="flex items-center gap-2 text-sm">
+                  <Target className="w-4 h-4 text-blue-600" />
+                  <span className="text-slate-600 font-medium">Auto-sync with company records</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Calendar & Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Calendar */}
-            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-2xl border border-white/50">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
-                    <CalendarIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-800">Attendance Calendar</h2>
-                </div>
-                <div className="flex gap-4 text-xs font-bold">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-green-500 rounded-full"></span> 
-                    <span className="text-slate-600">Present</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-orange-500 rounded-full"></span> 
-                    <span className="text-slate-600">Late</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-red-400 rounded-full"></span> 
-                    <span className="text-slate-600">Absent</span>
-                  </div>
-                </div>
+          {/* Calendar */}
+          <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
+                <CalIcon className="w-6 h-6 text-white" />
               </div>
-              <div className="calendar-wrapper modern-calendar">
-                <Calendar 
-                  onChange={handleDateClick} 
-                  onActiveStartDateChange={({ activeStartDate }) => calculateMonthlyStats(activeStartDate)}
-                  value={selectedDate} 
-                  tileClassName={getTileClassName} 
-                  className="w-full border-none font-sans"
-                />
-              </div>
+              <h2 className="text-xl font-bold text-slate-800">Attendance Calendar</h2>
             </div>
 
-            {/* Selected Date Details */}
-            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-2xl border border-white/50">
-              <div className="flex items-center gap-2 mb-6">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <h3 className="text-xl font-bold text-slate-800">
-                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </h3>
+            <div className="calendar-container mb-6">
+              <Calendar 
+                tileClassName={getTileClassName}
+                className="w-full border-none shadow-none rounded-xl"
+              />
+            </div>
+
+            <div className="flex gap-6 justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-green-100 border-2 border-green-600 rounded-md"></div>
+                <span className="text-sm font-semibold text-slate-600">On Time</span>
               </div>
-              {todayLog ? (
-                <div className={`p-6 rounded-2xl border-2 ${
-                  todayLog.status && todayLog.status.toLowerCase() === 'late' 
-                    ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300' 
-                    : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
-                }`}>
-                  <div className="flex items-start gap-4">
-                    <div className={`p-4 rounded-2xl ${
-                      todayLog.status && todayLog.status.toLowerCase() === 'late' 
-                        ? 'bg-orange-500' 
-                        : 'bg-green-500'
-                    }`}>
-                      {todayLog.status && todayLog.status.toLowerCase() === 'late' 
-                        ? <AlertTriangle size={32} className="text-white" /> 
-                        : <CheckCircle size={32} className="text-white" />
-                      }
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-2xl font-bold text-slate-800 mb-2">
-                        Status: {todayLog.status}
-                      </h4>
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Clock size={16} />
-                        <span className="font-mono font-bold text-lg">
-                          {new Date(todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-orange-100 border-2 border-orange-600 rounded-md"></div>
+                <span className="text-sm font-semibold text-slate-600">Late</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="lg:col-span-2 backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b-2 border-slate-200">
+                    <th className="p-4 text-slate-600 font-bold">Date & Time</th>
+                    <th className="p-4 text-slate-600 font-bold">Type</th>
+                    <th className="p-4 text-slate-600 font-bold">Status</th>
+                    <th className="p-4 text-slate-600 font-bold">Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendance.slice(0, 10).map((log, idx) => (
+                    <tr key={idx} className="border-b border-slate-100 hover:bg-emerald-50/50 transition-colors">
+                      <td className="p-4">
+                        <div>
+                          <p className="font-semibold text-slate-800">{new Date(log.timestamp).toLocaleDateString()}</p>
+                          <p className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</p>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                          log.type === 'check_in'
+                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {log.type === 'check_in' ? '→ Check In' : '← Check Out'}
                         </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                  <XCircle size={48} className="text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-400 font-medium">No attendance record for this day</p>
-                </div>
-              )}
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                          log.status === 'Late'
+                            ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                            : 'bg-green-100 text-green-700 border border-green-200'
+                        }`}>
+                          {log.status || 'On Time'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <code className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">
+                          {log.latitude?.toFixed(4)}, {log.longitude?.toFixed(4)}
+                        </code>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
-
-      <style jsx>{`
-        .modern-calendar {
-          font-family: inherit;
-        }
-        .modern-calendar .react-calendar {
-          border-radius: 1rem;
-          padding: 1rem;
-        }
-        .modern-calendar .react-calendar__tile {
-          padding: 1rem;
-          border-radius: 0.75rem;
-          transition: all 0.2s;
-        }
-        .modern-calendar .react-calendar__tile:hover {
-          transform: scale(1.05);
-        }
-        .modern-calendar .react-calendar__tile--now {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          font-weight: bold;
-        }
-        .modern-calendar .react-calendar__month-view__days__day--weekend {
-          color: #cbd5e1;
-        }
-      `}</style>
+      </main>
     </div>
   );
 };
