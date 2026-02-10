@@ -1,353 +1,227 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { employeeService } from '../services/api';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import Calendar from 'react-calendar'; 
+import 'react-calendar/dist/Calendar.css'; 
 import { 
-  User, LogOut, MapPin, Clock, Calendar as CalIcon, TrendingUp, Award, 
-  Target, CheckCircle, XCircle, Zap, Menu, Activity, Star
+  LogOut, User, Calendar as CalendarIcon, 
+  CheckCircle, AlertTriangle, XCircle, BarChart3
 } from 'lucide-react';
 
 const EmployeeDashboard = () => {
   const [profile, setProfile] = useState(null);
-  const [attendance, setAttendance] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [history, setHistory] = useState([]); 
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [todayLog, setTodayLog] = useState(null); 
+  const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadData();
+    loadProfile();
+    loadHistory();
   }, []);
 
-  const loadData = async () => {
+  // Recalculate stats whenever history updates
+  useEffect(() => {
+    if (history.length > 0) {
+      calculateMonthlyStats(new Date()); // Calculate for current month initially
+      handleDateClick(new Date());     // Select today
+    }
+  }, [history]);
+
+  const loadProfile = async () => {
     try {
-      const [profRes, attRes] = await Promise.all([
-        employeeService.getProfile(),
-        employeeService.getAttendance()
-      ]);
-      setProfile(profRes.data);
-      setAttendance(attRes.data);
+      const res = await employeeService.getProfile();
+      setProfile(res.data);
     } catch (err) {
-      toast.error("Failed to load data");
+      toast.error("Session expired");
+      navigate('/');
     }
   };
 
-  const handleCheckIn = async () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          await employeeService.checkIn(position.coords.latitude, position.coords.longitude);
-          toast.success("✅ Checked In Successfully!");
-          loadData();
-        } catch (err) {
-          toast.error(err.response?.data?.detail || "Check-in failed");
+  const loadHistory = async () => {
+    try {
+      const res = await employeeService.getHistory();
+      
+      // ✅ FIX 1: DEDUPLICATE HISTORY (Keep only the first log per day)
+      // This prevents "3 Presents" for 1 day in the stats.
+      const uniqueMap = new Map();
+      res.data.forEach(log => {
+        // Assume log.date_only is "YYYY-MM-DD"
+        if (!uniqueMap.has(log.date_only)) {
+          uniqueMap.set(log.date_only, log);
         }
-      },
-      () => toast.error("Unable to get location")
-    );
+      });
+      
+      const uniqueHistory = Array.from(uniqueMap.values());
+      console.log("Unique Daily Logs:", uniqueHistory); // Debugging
+      setHistory(uniqueHistory);
+
+    } catch (err) {
+      console.error("Failed to load history");
+    }
   };
 
-  const handleCheckOut = async () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported");
-      return;
+  // ✅ HELPER: Format Date to "YYYY-MM-DD" safely
+  const formatDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleDateClick = (date) => {
+    setSelectedDate(date);
+    const dateKey = formatDateKey(date);
+    const log = history.find(h => h.date_only === dateKey);
+    setTodayLog(log || null);
+  };
+
+  // ✅ FIX 2: ROBUST STATS CALCULATION
+  const calculateMonthlyStats = (referenceDate) => {
+    // We calculate stats for the MONTH currently being viewed (referenceDate)
+    const viewYear = referenceDate.getFullYear();
+    const viewMonth = referenceDate.getMonth();
+
+    const thisMonthLogs = history.filter(log => {
+      if (!log.date_only) return false;
+      const [y, m, d] = log.date_only.split('-').map(Number);
+      return (m - 1) === viewMonth && y === viewYear;
+    });
+
+    // Count Present & Late (Case Insensitive)
+    let presentCount = 0;
+    let lateCount = 0;
+
+    thisMonthLogs.forEach(l => {
+        const status = l.status ? l.status.toLowerCase() : "";
+        if (status === 'late') lateCount++;
+        else if (status === 'present') presentCount++;
+    });
+
+    // Calculate Absent Days (Business Days Passed - Attended Days)
+    let workingDaysCount = 0;
+    const now = new Date();
+    
+    // Determine the last day to count (Today if current month, else end of month)
+    const isCurrentMonth = viewMonth === now.getMonth() && viewYear === now.getFullYear();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const limitDay = isCurrentMonth ? now.getDate() : daysInMonth;
+
+    for (let i = 1; i <= limitDay; i++) {
+      const dayCheck = new Date(viewYear, viewMonth, i);
+      const dayOfWeek = dayCheck.getDay();
+      // Exclude Sun(0) and Sat(6)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDaysCount++;
+      }
     }
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          await employeeService.checkOut(position.coords.latitude, position.coords.longitude);
-          toast.success("👋 Checked Out Successfully!");
-          loadData();
-        } catch (err) {
-          toast.error(err.response?.data?.detail || "Check-out failed");
-        }
-      },
-      () => toast.error("Unable to get location")
-    );
+
+    const totalAttended = presentCount + lateCount;
+    // Absent cannot be negative
+    const absentCount = Math.max(0, workingDaysCount - totalAttended);
+
+    setStats({ present: presentCount, late: lateCount, absent: absentCount });
   };
 
   const getTileClassName = ({ date, view }) => {
     if (view === 'month') {
-      const dayLogs = attendance.filter(log => {
-        const logDate = new Date(log.timestamp);
-        return logDate.getDate() === date.getDate() &&
-               logDate.getMonth() === date.getMonth() &&
-               logDate.getFullYear() === date.getFullYear();
-      });
+      const dateKey = formatDateKey(date); 
+      const today = new Date();
+      today.setHours(0,0,0,0);
 
-      if (dayLogs.length > 0) {
-        const isLate = dayLogs.some(log => log.status === 'Late');
-        return isLate ? 'bg-orange-100 text-orange-600 font-bold border-2 border-orange-300' : 'bg-green-100 text-green-600 font-bold border-2 border-green-300';
+      const log = history.find(l => l.date_only === dateKey);
+      
+      if (log) {
+        // Case insensitive check
+        const isLate = log.status && log.status.toLowerCase() === 'late';
+        return isLate 
+          ? 'bg-orange-100 text-orange-600 font-bold rounded-md' 
+          : 'bg-green-100 text-green-600 font-bold rounded-md';
+      }
+
+      // Check for Absent
+      if (date < today && date.getDay() !== 0 && date.getDay() !== 6) {
+        return 'bg-red-100 text-red-600 font-bold rounded-md';
       }
     }
     return null;
   };
 
-  const totalPresent = attendance.filter(a => a.type === 'check_in').length;
-  const totalLate = attendance.filter(a => a.status === 'Late').length;
-  const attendanceRate = attendance.length > 0 ? Math.round((totalPresent / 30) * 100) : 0;
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/');
+  };
+
+  if (!profile) return <div className="p-8 text-center">Loading Profile...</div>;
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-emerald-50 overflow-hidden">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-80' : 'w-20'} bg-gradient-to-b from-[#00755e] to-emerald-800 text-white transition-all duration-300 flex flex-col shadow-2xl`}>
-        {/* Logo */}
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <User className="w-6 h-6" />
-            </div>
-            {sidebarOpen && (
-              <div>
-                <h2 className="font-black text-lg">AttendancePro</h2>
-                <p className="text-xs text-emerald-200">Employee Portal</p>
-              </div>
-            )}
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Column: Profile */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600"><User size={32} /></div>
+            <h2 className="text-xl font-bold text-slate-800">{profile.name}</h2>
+            <p className="text-sm text-slate-500 font-mono mb-4">{profile.employee_id}</p>
+            <div className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase">{profile.role}</div>
           </div>
+          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-red-500 font-bold p-4 hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100 bg-white shadow-sm"><LogOut size={18}/> Logout</button>
         </div>
 
-        {/* Profile Card */}
-        {sidebarOpen && profile && (
-          <div className="p-6 border-b border-white/10">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-[#00755e] rounded-2xl flex items-center justify-center">
-                  <span className="text-2xl font-black text-white">{profile.name?.charAt(0)}</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-white">{profile.name}</h3>
-                  <p className="text-xs text-emerald-200">ID: {profile.employee_id}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Award className="w-4 h-4 text-emerald-300" />
-                  <span className="text-emerald-100">Role: {profile.role || 'Staff'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Activity className="w-4 h-4 text-emerald-300" />
-                  <span className="text-emerald-100">Status: Active</span>
-                </div>
+        {/* Right Column: Calendar */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><CalendarIcon className="text-blue-600"/> My Attendance</h2>
+              <div className="flex gap-3 text-xs font-bold">
+                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-green-100 border border-green-500 rounded-full"></span> Present</div>
+                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-orange-100 border border-orange-500 rounded-full"></span> Late</div>
+                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-red-100 border border-red-500 rounded-full"></span> Absent</div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Stats */}
-        {sidebarOpen && (
-          <div className="flex-1 p-6 space-y-4">
-            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="w-5 h-5 text-green-300" />
-                <h4 className="text-sm font-semibold text-emerald-200">Attendance Rate</h4>
-              </div>
-              <p className="text-4xl font-black text-white mb-2">{attendanceRate}%</p>
-              <div className="w-full bg-white/20 rounded-full h-3">
-                <div className="bg-gradient-to-r from-green-400 to-emerald-300 rounded-full h-3 transition-all duration-500" style={{ width: `${attendanceRate}%` }}></div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Star className="w-4 h-4 text-yellow-300" />
-                  <span className="text-xs text-emerald-200">Present</span>
-                </div>
-                <p className="text-2xl font-black text-white">{totalPresent}</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <XCircle className="w-4 h-4 text-orange-300" />
-                  <span className="text-xs text-emerald-200">Late</span>
-                </div>
-                <p className="text-2xl font-black text-white">{totalLate}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Toggle & Logout */}
-        <div className="p-4 border-t border-white/10 space-y-2">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => { localStorage.clear(); navigate('/'); }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="text-sm font-semibold">Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-xl border border-white/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-black text-slate-800 mb-1">My Attendance</h1>
-                <p className="text-slate-500 text-sm">Track your presence and performance</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="backdrop-blur-md bg-gradient-to-r from-[#00755e]/10 to-emerald-500/10 px-5 py-3 rounded-xl border border-[#00755e]/20">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-[#00755e]" />
-                    <div>
-                      <p className="text-xs text-slate-500 font-medium">Performance Score</p>
-                      <p className="text-2xl font-black text-[#00755e]">{attendanceRate}%</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Check In/Out Actions */}
-          <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-800">Quick Actions</h2>
-            </div>
-
-            <div className="space-y-4">
-              <button 
-                onClick={handleCheckIn} 
-                className="w-full bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3"
-              >
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-lg">Check In</span>
-              </button>
-
-              <button 
-                onClick={handleCheckOut} 
-                className="w-full bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-3"
-              >
-                <Clock className="w-6 h-6" />
-                <span className="text-lg">Check Out</span>
-              </button>
-            </div>
-
-            {/* Quick Info */}
-            <div className="mt-8 space-y-3">
-              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-200">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-[#00755e]" />
-                  <span className="text-slate-600 font-medium">Location tracking enabled</span>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl border border-blue-200">
-                <div className="flex items-center gap-2 text-sm">
-                  <Target className="w-4 h-4 text-blue-600" />
-                  <span className="text-slate-600 font-medium">Auto-sync with company records</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Calendar */}
-          <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                <CalIcon className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-800">Attendance Calendar</h2>
-            </div>
-
-            <div className="calendar-container mb-6">
+            <div className="calendar-wrapper custom-calendar">
               <Calendar 
-                tileClassName={getTileClassName}
-                className="w-full border-none shadow-none rounded-xl"
+                onChange={handleDateClick} 
+                // Recalculate stats when user changes the month view
+                onActiveStartDateChange={({ activeStartDate }) => calculateMonthlyStats(activeStartDate)}
+                value={selectedDate} 
+                tileClassName={getTileClassName} 
+                className="w-full border-none font-sans text-sm"
               />
             </div>
-
-            <div className="flex gap-6 justify-center">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-green-100 border-2 border-green-600 rounded-md"></div>
-                <span className="text-sm font-semibold text-slate-600">On Time</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-orange-100 border-2 border-orange-600 rounded-md"></div>
-                <span className="text-sm font-semibold text-slate-600">Late</span>
-              </div>
-            </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="lg:col-span-2 backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                <Activity className="w-6 h-6 text-white" />
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 className="text-sm font-bold text-slate-500 uppercase mb-4">Details for {selectedDate.toDateString()}</h3>
+            {todayLog ? (
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-full ${todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>{todayLog.status && todayLog.status.toLowerCase() === 'late' ? <AlertTriangle size={24}/> : <CheckCircle size={24}/>}</div>
+                <div>
+                  <h4 className="font-bold text-lg text-slate-800">You were {todayLog.status}</h4>
+                  <p className="text-slate-500 text-sm">Punch In Time: <span className="font-mono text-slate-700 font-bold">
+                    {new Date(todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span></p>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
-            </div>
+            ) : (<p className="text-slate-400 italic">No attendance record for this day.</p>)}
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b-2 border-slate-200">
-                    <th className="p-4 text-slate-600 font-bold">Date & Time</th>
-                    <th className="p-4 text-slate-600 font-bold">Type</th>
-                    <th className="p-4 text-slate-600 font-bold">Status</th>
-                    <th className="p-4 text-slate-600 font-bold">Location</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attendance.slice(0, 10).map((log, idx) => (
-                    <tr key={idx} className="border-b border-slate-100 hover:bg-emerald-50/50 transition-colors">
-                      <td className="p-4">
-                        <div>
-                          <p className="font-semibold text-slate-800">{new Date(log.timestamp).toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</p>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                          log.type === 'check_in'
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}>
-                          {log.type === 'check_in' ? '→ Check In' : '← Check Out'}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                          log.status === 'Late'
-                            ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                            : 'bg-green-100 text-green-700 border border-green-200'
-                        }`}>
-                          {log.status || 'On Time'}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <code className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">
-                          {log.latitude?.toFixed(4)}, {log.longitude?.toFixed(4)}
-                        </code>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Stats Section */}
+          <div className="bg-slate-800 text-white p-6 rounded-2xl shadow-lg">
+            <h3 className="font-bold mb-4 flex items-center gap-2 text-slate-200"><BarChart3 size={20}/> Monthly Summary</h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-green-400 mb-1">{stats.present}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><CheckCircle size={12}/> Present</div></div>
+              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-orange-400 mb-1">{stats.late}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><AlertTriangle size={12}/> Late</div></div>
+              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-red-400 mb-1">{stats.absent}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><XCircle size={12}/> Absent</div></div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
-
 export default EmployeeDashboard;

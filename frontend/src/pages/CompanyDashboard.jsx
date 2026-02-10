@@ -5,23 +5,24 @@ import { useNavigate } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { 
-  Building2, Users, MapPin, History, LogOut, Trash2, Power, UserCheck, 
-  ShieldAlert, Fingerprint, Lock, Settings, Clock, X, Crosshair, Plus,
-  TrendingUp, Zap, Calendar as CalIcon, Target, Globe, Menu
+  Building2, Users, MapPin, History, LogOut, 
+  Trash2, Power, UserCheck, ShieldAlert, Fingerprint, Lock, Settings, Clock, X, Crosshair
 } from 'lucide-react';
 
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('staff'); 
   const [employees, setEmployees] = useState([]);
   const [devices, setDevices] = useState([]); 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   
+  // Forms & Modals
   const [newEmp, setNewEmp] = useState({ employee_id: '', name: '', password: '', role: 'Staff' });
   const [manualAtt, setManualAtt] = useState({ employee_id: '', type: 'check_in', date: '', time: '' });
   
+  // Settings & Schedule
   const [settings, setSettings] = useState({ lat: '', lng: '', radius: '50' });
   const [schedule, setSchedule] = useState({ start: '09:00', end: '17:00' });
 
+  // Calendar State
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
@@ -31,7 +32,10 @@ const CompanyDashboard = () => {
   useEffect(() => {
     loadEmployees();
     loadDevices(); 
+    // You might want to load existing settings here if your API supports GET settings
   }, []);
+
+  // --- FUNCTIONS ---
 
   const handleSaveSchedule = async (e) => {
     e.preventDefault();
@@ -41,6 +45,7 @@ const CompanyDashboard = () => {
     } catch (err) { toast.error("Failed to update schedule"); }
   };
 
+  // ✅ NEW: Save Location Function
   const handleSaveLocation = async (e) => {
     e.preventDefault();
     try {
@@ -49,6 +54,7 @@ const CompanyDashboard = () => {
     } catch (err) { toast.error("Failed to update location"); }
   };
 
+  // ✅ NEW: Auto-Detect Location Helper
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser");
@@ -129,6 +135,8 @@ const CompanyDashboard = () => {
       toast.success("Door Unlock Command Sent 🔓");
     } catch (err) { toast.error("Command Failed"); }
   };
+
+  // --- CALENDAR FUNCTIONS ---
   
   const openHistory = async (emp) => {
     setSelectedEmp(emp);
@@ -159,482 +167,230 @@ const CompanyDashboard = () => {
     return null;
   };
 
-  const menuItems = [
-    { key: 'staff', label: 'Staff Management', icon: Users },
-    { key: 'control', label: 'Control Center', icon: ShieldAlert },
-    { key: 'settings', label: 'Settings', icon: Settings }
-  ];
-
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-emerald-50 overflow-hidden">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-[#00755e] to-emerald-800 text-white transition-all duration-300 flex flex-col shadow-2xl`}>
-        {/* Logo */}
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              <Building2 className="w-6 h-6" />
-            </div>
-            {sidebarOpen && (
-              <div>
-                <h2 className="font-black text-lg">AttendancePro</h2>
-                <p className="text-xs text-emerald-200">Company Portal</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {menuItems.map(item => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                onClick={() => setActiveTab(item.key)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  activeTab === item.key
-                    ? 'bg-white text-[#00755e] shadow-lg font-bold'
-                    : 'hover:bg-white/10 text-white/80 hover:text-white'
-                }`}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && <span className="text-sm">{item.label}</span>}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Stats */}
-        {sidebarOpen && (
-          <div className="p-4 border-t border-white/10">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-emerald-200">Total Staff</span>
-                <span className="text-2xl font-black">{employees.length}</span>
-              </div>
-              <div className="w-full bg-white/20 rounded-full h-2">
-                <div className="bg-white rounded-full h-2" style={{ width: '70%' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Toggle & Logout */}
-        <div className="p-4 border-t border-white/10 space-y-2">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
-          >
-            <Menu className="w-5 h-5" />
+    <div className="min-h-screen bg-slate-50 p-8 font-sans relative">
+      <div className="max-w-6xl mx-auto">
+        {/* HEADER */}
+        <header className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+            <Building2 className="text-blue-600"/> Company Portal
+          </h1>
+          <button onClick={() => { localStorage.clear(); navigate('/'); }} className="text-red-500 hover:bg-red-50 px-3 py-1 rounded flex gap-2">
+            <LogOut size={18}/> Logout
           </button>
-          <button
-            onClick={() => { localStorage.clear(); navigate('/'); }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="text-sm font-semibold">Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="backdrop-blur-xl bg-white/80 rounded-3xl p-6 shadow-xl border border-white/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-black text-slate-800 mb-1">
-                  {menuItems.find(m => m.key === activeTab)?.label}
-                </h1>
-                <p className="text-slate-500 text-sm">Manage your workforce efficiently</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="backdrop-blur-md bg-gradient-to-r from-[#00755e]/10 to-emerald-500/10 px-5 py-3 rounded-xl border border-[#00755e]/20">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#00755e]" />
-                    <div>
-                      <p className="text-xs text-slate-500 font-medium">Total Employees</p>
-                      <p className="text-2xl font-black text-[#00755e]">{employees.length}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </header>
 
-        {/* TAB 1: STAFF MANAGEMENT */}
+        {/* TABS */}
+        <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
+          <button onClick={() => setActiveTab('staff')} className={`whitespace-nowrap px-4 py-2 rounded-lg font-bold flex items-center gap-2 ${activeTab === 'staff' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600'}`}>
+            <Users size={18}/> Staff
+          </button>
+          <button onClick={() => setActiveTab('control')} className={`whitespace-nowrap px-4 py-2 rounded-lg font-bold flex items-center gap-2 ${activeTab === 'control' ? 'bg-amber-600 text-white' : 'bg-white text-slate-600'}`}>
+            <ShieldAlert size={18}/> Control Center
+          </button>
+          <button onClick={() => setActiveTab('settings')} className={`whitespace-nowrap px-4 py-2 rounded-lg font-bold flex items-center gap-2 ${activeTab === 'settings' ? 'bg-slate-700 text-white' : 'bg-white text-slate-600'}`}>
+            <Settings size={18}/> Office Settings
+          </button>
+        </div>
+
+        {/* === TAB 1: STAFF MANAGEMENT === */}
         {activeTab === 'staff' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Add Staff Form */}
-            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50 h-fit">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                  <Plus className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-800">Add New Staff</h2>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* ADD STAFF FORM */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+              <h2 className="font-bold mb-4 text-slate-700">Add New Staff</h2>
               <form onSubmit={handleAddEmployee} className="space-y-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Employee ID</label>
-                  <input 
-                    placeholder="e.g. EMP01" 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                    value={newEmp.employee_id} 
-                    onChange={e => setNewEmp({...newEmp, employee_id: e.target.value})} 
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Full Name</label>
-                  <input 
-                    placeholder="John Doe" 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                    value={newEmp.name} 
-                    onChange={e => setNewEmp({...newEmp, name: e.target.value})} 
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Password</label>
-                  <input 
-                    placeholder="••••••••" 
-                    type="password" 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                    value={newEmp.password} 
-                    onChange={e => setNewEmp({...newEmp, password: e.target.value})} 
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Role</label>
-                  <select 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                    value={newEmp.role} 
-                    onChange={e => setNewEmp({...newEmp, role: e.target.value})}
-                  >
-                    <option value="Staff">Office Staff</option>
-                    <option value="Marketing">Field Marketing</option>
-                  </select>
-                </div>
-                <button className="w-full bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  Register Employee
-                </button>
+                <input placeholder="ID (e.g. EMP01)" className="w-full border p-2 rounded" value={newEmp.employee_id} onChange={e => setNewEmp({...newEmp, employee_id: e.target.value})} />
+                <input placeholder="Name" className="w-full border p-2 rounded" value={newEmp.name} onChange={e => setNewEmp({...newEmp, name: e.target.value})} />
+                <input placeholder="Password" type="password" className="w-full border p-2 rounded" value={newEmp.password} onChange={e => setNewEmp({...newEmp, password: e.target.value})} />
+                <select className="w-full border p-2 rounded" value={newEmp.role} onChange={e => setNewEmp({...newEmp, role: e.target.value})}>
+                  <option value="Staff">Office Staff</option>
+                  <option value="Marketing">Field Marketing</option>
+                </select>
+                <button className="w-full bg-blue-600 text-white font-bold py-2 rounded">Register</button>
               </form>
             </div>
 
-            {/* Staff List */}
-            <div className="lg:col-span-2 backdrop-blur-xl bg-white/80 p-6 rounded-3xl shadow-xl border border-white/50">
-              <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="w-5 h-5 text-[#00755e]" />
-                <h2 className="text-xl font-bold text-slate-800">Employee Directory</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b-2 border-slate-200">
-                      <th className="p-4 text-slate-600 font-bold">ID</th>
-                      <th className="p-4 text-slate-600 font-bold">Name</th>
-                      <th className="p-4 text-slate-600 font-bold">Status</th>
-                      <th className="p-4 text-slate-600 font-bold text-right">Actions</th>
+            {/* STAFF LIST */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h2 className="font-bold mb-4 text-slate-700">Staff List</h2>
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-500">
+                  <tr>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map(emp => (
+                    <tr key={emp.id} className="border-b hover:bg-slate-50">
+                      <td className="p-3 font-mono">{emp.employee_id}</td>
+                      <td className="p-3">{emp.name}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded text-xs ${emp.status === 'suspended' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                          {emp.status || 'active'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right flex justify-end gap-2">
+                        <button onClick={() => openHistory(emp)} className="p-2 rounded text-blue-600 bg-blue-50 hover:bg-blue-100" title="View Calendar">
+                          <History size={16}/>
+                        </button>
+                        <button onClick={() => handleToggleStatus(emp)} 
+                          title={emp.status === 'suspended' ? "Activate" : "Suspend"}
+                          className={`p-2 rounded ${emp.status === 'suspended' ? 'text-green-600 bg-green-50' : 'text-amber-600 bg-amber-50'}`}>
+                          {emp.status === 'suspended' ? <UserCheck size={16}/> : <Power size={16}/>}
+                        </button>
+                        <button onClick={() => handleDelete(emp.id)} className="p-2 rounded text-red-600 bg-red-50 hover:bg-red-100">
+                          <Trash2 size={16}/>
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map(emp => (
-                      <tr key={emp.id} className="border-b border-slate-100 hover:bg-emerald-50/50 transition-colors">
-                        <td className="p-4">
-                          <code className="bg-emerald-100 text-[#00755e] px-2 py-1 rounded font-mono text-xs font-bold">{emp.employee_id}</code>
-                        </td>
-                        <td className="p-4 font-semibold text-slate-800">{emp.name}</td>
-                        <td className="p-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                            emp.status === 'suspended' 
-                              ? 'bg-red-100 text-red-700 border border-red-200' 
-                              : 'bg-green-100 text-green-700 border border-green-200'
-                          }`}>
-                            {emp.status || 'active'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex justify-end gap-2">
-                            <button 
-                              onClick={() => openHistory(emp)} 
-                              className="p-2 rounded-xl text-[#00755e] bg-emerald-100 hover:bg-emerald-200 transition-all" 
-                              title="View Calendar"
-                            >
-                              <History size={18}/>
-                            </button>
-                            <button 
-                              onClick={() => handleToggleStatus(emp)} 
-                              title={emp.status === 'suspended' ? "Activate" : "Suspend"}
-                              className={`p-2 rounded-xl transition-all ${
-                                emp.status === 'suspended' 
-                                  ? 'text-green-600 bg-green-100 hover:bg-green-200' 
-                                  : 'text-amber-600 bg-amber-100 hover:bg-amber-200'
-                              }`}
-                            >
-                              {emp.status === 'suspended' ? <UserCheck size={18}/> : <Power size={18}/>}
-                            </button>
-                            <button 
-                              onClick={() => handleDelete(emp.id)} 
-                              className="p-2 rounded-xl text-red-600 bg-red-100 hover:bg-red-200 transition-all"
-                            >
-                              <Trash2 size={18}/>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* TAB 2: CONTROL CENTER */}
+        {/* === TAB 2: CONTROL CENTER === */}
         {activeTab === 'control' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Manual Attendance */}
-            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                  <Fingerprint className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-800">Manual Attendance Entry</h2>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h2 className="font-bold mb-4 flex items-center gap-2 text-blue-700"><Fingerprint/> Manual Attendance</h2>
               <form onSubmit={handleManualAttendance} className="space-y-4">
-                <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Employee ID</label>
-                  <input 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                    placeholder="e.g. EMP01" 
-                    onChange={e => setManualAtt({...manualAtt, employee_id: e.target.value})} 
-                    required 
-                  />
-                </div>
+                <input className="w-full border p-2 rounded mt-1" placeholder="Employee ID (e.g. EMP01)" 
+                  onChange={e => setManualAtt({...manualAtt, employee_id: e.target.value})} required />
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-semibold text-slate-600 mb-2 block">Date</label>
-                    <input 
-                      type="date" 
-                      className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                      onChange={e => setManualAtt({...manualAtt, date: e.target.value})} 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-slate-600 mb-2 block">Time</label>
-                    <input 
-                      type="time" 
-                      className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors" 
-                      onChange={e => setManualAtt({...manualAtt, time: e.target.value})} 
-                      required 
-                    />
-                  </div>
+                  <input type="date" className="w-full border p-2 rounded mt-1" 
+                    onChange={e => setManualAtt({...manualAtt, date: e.target.value})} required />
+                  <input type="time" className="w-full border p-2 rounded mt-1" 
+                    onChange={e => setManualAtt({...manualAtt, time: e.target.value})} required />
                 </div>
-                <div className="flex gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="type" 
-                      value="check_in" 
-                      defaultChecked 
-                      onChange={() => setManualAtt({...manualAtt, type: 'check_in'})} 
-                      className="w-4 h-4 text-[#00755e]"
-                    />
-                    <span className="font-medium text-slate-700">Check In</span>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="type" value="check_in" defaultChecked onChange={() => setManualAtt({...manualAtt, type: 'check_in'})} /> Check In
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="type" 
-                      value="check_out" 
-                      onChange={() => setManualAtt({...manualAtt, type: 'check_out'})} 
-                      className="w-4 h-4 text-[#00755e]"
-                    />
-                    <span className="font-medium text-slate-700">Check Out</span>
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="type" value="check_out" onChange={() => setManualAtt({...manualAtt, type: 'check_out'})} /> Check Out
                   </label>
                 </div>
-                <button className="w-full bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">
-                  Submit Attendance
-                </button>
+                <button className="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Submit</button>
               </form>
             </div>
-
-            {/* Emergency Door Control */}
-            <div className="backdrop-blur-xl bg-gradient-to-br from-red-50 to-orange-50 p-8 rounded-3xl shadow-xl border-2 border-red-200">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl animate-pulse">
-                  <Lock className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-red-800">Emergency Door Control</h2>
-              </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100">
+              <h2 className="font-bold mb-4 flex items-center gap-2 text-red-600"><Lock/> Emergency Door Control</h2>
               <div className="space-y-3">
-                {devices.length === 0 ? (
-                  <p className="text-slate-500 italic text-center py-8">No devices configured.</p>
-                ) : (
-                  devices.map(dev => (
-                    <div key={dev.id} className="bg-white border-2 border-red-200 p-5 rounded-2xl flex justify-between items-center hover:shadow-lg transition-shadow">
-                      <div>
-                        <h4 className="font-bold text-slate-800 text-lg">{dev.device_type}</h4>
-                        <p className="text-xs text-slate-500 font-mono mt-1">UID: {dev.device_uid}</p>
-                      </div>
-                      <button 
-                        onClick={() => handleEmergencyOpen(dev.id)} 
-                        className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg transition-all transform hover:scale-105"
-                      >
-                        UNLOCK
-                      </button>
+                {devices.length === 0 ? <p className="text-slate-400 italic">No devices found.</p> : devices.map(dev => (
+                  <div key={dev.id} className="border border-slate-200 p-4 rounded-lg flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-slate-700">{dev.device_type}</h4>
+                      <p className="text-xs text-slate-500 font-mono">UID: {dev.device_uid}</p>
                     </div>
-                  ))
-                )}
+                    <button onClick={() => handleEmergencyOpen(dev.id)} className="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded font-bold text-sm border border-red-200">OPEN DOOR</button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 3: SETTINGS */}
+        {/* === TAB 3: SETTINGS (✅ UPDATED WITH LOCATION) === */}
         {activeTab === 'settings' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Schedule */}
-            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-800">Work Schedule</h2>
-              </div>
-              <form onSubmit={handleSaveSchedule} className="space-y-5">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+             
+             {/* 1. SCHEDULE CARD */}
+             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 h-fit">
+              <h2 className="font-bold text-xl mb-6 flex items-center gap-2 text-slate-800">
+                <Clock className="text-blue-500"/> Work Schedule
+              </h2>
+              <form onSubmit={handleSaveSchedule} className="space-y-6">
                 <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Office Start Time</label>
-                  <input 
-                    type="time" 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors"
-                    value={schedule.start} 
-                    onChange={e => setSchedule({...schedule, start: e.target.value})} 
-                    required 
-                  />
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Office Start Time</label>
+                  <input type="time" className="w-full border p-2 rounded"
+                    value={schedule.start} onChange={e => setSchedule({...schedule, start: e.target.value})} required />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Office End Time</label>
-                  <input 
-                    type="time" 
-                    className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors"
-                    value={schedule.end} 
-                    onChange={e => setSchedule({...schedule, end: e.target.value})} 
-                    required 
-                  />
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Office End Time</label>
+                  <input type="time" className="w-full border p-2 rounded"
+                    value={schedule.end} onChange={e => setSchedule({...schedule, end: e.target.value})} required />
                 </div>
-                <button className="w-full bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">
+                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded">
                   Update Schedule
                 </button>
               </form>
             </div>
 
-            {/* Location */}
-            <div className="backdrop-blur-xl bg-white/80 p-8 rounded-3xl shadow-xl border border-white/50">
+            {/* 2. ✅ NEW: LOCATION CARD */}
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 h-fit">
               <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                    <Globe className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-800">Office Location</h2>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={handleGetLocation} 
-                  className="bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white px-4 py-2 rounded-xl flex items-center gap-2 font-semibold text-sm shadow-lg transition-all"
-                >
-                  <Crosshair size={16}/> Detect
+                <h2 className="font-bold text-xl flex items-center gap-2 text-slate-800">
+                  <MapPin className="text-red-500"/> Office Location
+                </h2>
+                <button type="button" onClick={handleGetLocation} className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-full flex items-center gap-1 font-bold">
+                  <Crosshair size={14}/> Get Current
                 </button>
               </div>
               
               <form onSubmit={handleSaveLocation} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-500 mb-1 block uppercase">Latitude</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors font-mono text-sm"
-                      value={settings.lat} 
-                      onChange={e => setSettings({...settings, lat: e.target.value})} 
-                      required 
-                    />
+                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Latitude</label>
+                    <input type="text" className="w-full border p-2 rounded bg-slate-50"
+                      value={settings.lat} onChange={e => setSettings({...settings, lat: e.target.value})} required />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-500 mb-1 block uppercase">Longitude</label>
-                    <input 
-                      type="text" 
-                      className="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors font-mono text-sm"
-                      value={settings.lng} 
-                      onChange={e => setSettings({...settings, lng: e.target.value})} 
-                      required 
-                    />
+                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Longitude</label>
+                    <input type="text" className="w-full border p-2 rounded bg-slate-50"
+                      value={settings.lng} onChange={e => setSettings({...settings, lng: e.target.value})} required />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-slate-600 mb-2 block">Geofence Radius (Meters)</label>
-                  <div className="relative">
-                    <input 
-                      type="number" 
-                      className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl focus:border-[#00755e] focus:outline-none transition-colors"
-                      value={settings.radius} 
-                      onChange={e => setSettings({...settings, radius: e.target.value})} 
-                      required 
-                    />
-                    <Target className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">Acceptable distance from office center</p>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Geofence Radius (Meters)</label>
+                  <input type="number" className="w-full border p-2 rounded"
+                    value={settings.radius} onChange={e => setSettings({...settings, radius: e.target.value})} required />
+                  <p className="text-xs text-slate-400 mt-1">Distance allowed from center point.</p>
                 </div>
-                <button className="w-full bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">
+                <button className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded">
                   Update Location
                 </button>
               </form>
             </div>
-          </div>
-        )}
-      </main>
 
-      {/* Calendar Modal */}
+           </div>
+        )}
+
+      </div>
+
+      {/* === CALENDAR MODAL === */}
       {showCalendar && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl relative animate-scale-in">
-            <button 
-              onClick={() => setShowCalendar(false)} 
-              className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-xl transition-all"
-            >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setShowCalendar(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
               <X size={24}/>
             </button>
             
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-xl">
-                  <CalIcon className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-slate-800">{selectedEmp?.name}</h2>
-              </div>
-              <p className="text-slate-500 text-sm ml-11">Attendance History</p>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-slate-800">{selectedEmp?.name}</h2>
+              <p className="text-slate-500 text-sm">Attendance History</p>
             </div>
 
-            <div className="calendar-container mb-6">
+            <div className="calendar-container">
               <Calendar 
                 tileClassName={getTileClassName}
-                className="w-full border-none shadow-none rounded-xl"
+                className="w-full border-none shadow-none text-sm"
               />
             </div>
 
-            <div className="flex gap-6 justify-center">
+            <div className="mt-4 flex gap-4 text-sm justify-center">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-100 border-2 border-green-600 rounded"></div>
-                <span className="text-sm font-medium text-slate-600">Present</span>
+                <div className="w-3 h-3 bg-green-100 border border-green-600 rounded"></div>
+                <span>Present</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-orange-100 border-2 border-orange-600 rounded"></div>
-                <span className="text-sm font-medium text-slate-600">Late</span>
+                <div className="w-3 h-3 bg-orange-100 border border-orange-600 rounded"></div>
+                <span>Late</span>
               </div>
             </div>
           </div>
