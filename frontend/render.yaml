@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: attendance-frontend
+    env: static
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: dist
+    routes:
+      - path: "/*"
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        scope: build
+        value: # You'll set this to your backend URL

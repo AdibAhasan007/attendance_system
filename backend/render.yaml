@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: attendance-backend
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        scope: run
+        value: # You'll set this from Render PostgreSQL
+      - key: SECRET_KEY
+        scope: run
+        value: # You'll generate this in Render
+      - key: ZK_API_KEY
+        scope: run
+        value: # Optional, set if using IoT hardware
+      - key: ZK_API_URL
+        scope: run
+        value: https://api.zkteco.cloud
+
+  - type: web
+    name: attendance-frontend
+    env: static
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: dist
+    routes:
+      - path: "/*"
+        destination: /index.html
