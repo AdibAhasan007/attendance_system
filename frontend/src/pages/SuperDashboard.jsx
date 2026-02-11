@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { superAdminService } from '../services/api';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Server, Shield, LogOut, Trash2, Edit2, Power, X, Check, Plus, Building2, Zap } from 'lucide-react';
+import { Server, Shield, LogOut, Trash2, Edit2, Power, X, Check, Plus, Building2, Zap, Home, Settings, BarChart3, TrendingUp, Users, HelpCircle, ChevronDown } from 'lucide-react';
 
 const SuperDashboard = () => {
   const [companies, setCompanies] = useState([]);
@@ -101,6 +101,12 @@ const SuperDashboard = () => {
   };
 
   const cancelHwEdit = () => { setEditingHw(null); };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 p-8">
