@@ -109,61 +109,61 @@ const SuperDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 font-sans">
       <div className="flex h-screen overflow-hidden">
         
         {/* ===== MODERN SIDEBAR ===== */}
-        <div className="w-64 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl">
+        <div className="w-72 bg-gradient-to-b from-slate-900/98 via-slate-800/95 to-slate-900/98 backdrop-blur-2xl border-r border-cyan-500/20 flex flex-col shadow-2xl">
           
           {/* Sidebar Header */}
-          <div className="p-6 border-b border-slate-700/30">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <Shield className="w-6 h-6 text-white" />
+          <div className="p-8 border-b border-slate-700/40">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-14 h-14 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform">
+                <Shield className="w-7 h-7 text-white font-bold" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-sm">Owner Portal</h3>
-                <p className="text-xs text-purple-300">Platform Control</p>
+                <h3 className="font-black text-white text-lg">SUPER ADMIN</h3>
+                <p className="text-xs text-cyan-300 font-semibold">Platform Master</p>
               </div>
             </div>
           </div>
 
           {/* Sidebar Menu */}
-          <div className="flex-1 p-4 space-y-2 mt-4">
+          <div className="flex-1 p-6 space-y-3 mt-4">
             {[
               { id: 'companies', label: 'Companies', icon: Building2 },
               { id: 'hardware', label: 'Hardware', icon: Zap }
             ].map(tab => (
               <button
                 key={tab.id}
-                className={`w-full px-4 py-3 text-left rounded-xl font-semibold text-sm transition-all flex items-center gap-3 bg-gradient-to-r from-purple-600/30 to-pink-600/30 text-white border border-purple-500/30`}
+                className={`w-full px-5 py-4 text-left rounded-2xl font-bold text-sm transition-all flex items-center gap-4 bg-gradient-to-r from-cyan-500/15 to-blue-600/15 text-cyan-100 border border-cyan-400/40 hover:from-cyan-500/25 hover:to-blue-600/25 hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/20 group`}
               >
-                <tab.icon className="w-5 h-5" />
+                <tab.icon className="w-5 h-5 group-hover:scale-125 transition-transform text-cyan-400" />
                 {tab.label}
               </button>
             ))}
           </div>
 
           {/* Platform Stats */}
-          <div className="p-4 border-t border-slate-700/30 space-y-3">
-            <div className="text-xs text-slate-400 uppercase font-bold mb-3">Platform Stats</div>
-            <div className="bg-purple-500/10 rounded-xl p-3 border border-purple-500/30">
-              <p className="text-xs text-slate-400 mb-1">Total Companies</p>
-              <p className="text-2xl font-bold text-purple-400">{companies.length}</p>
+          <div className="p-6 border-t border-slate-700/40 space-y-3">
+            <div className="text-xs text-slate-400 uppercase font-black tracking-wider mb-4">PLATFORM METRICS</div>
+            <div className="bg-gradient-to-br from-cyan-500/15 to-blue-600/15 rounded-2xl p-4 border border-cyan-400/40 hover:border-cyan-400/60 transition-all">
+              <p className="text-xs text-slate-400 font-bold mb-2 uppercase tracking-wider">Total Companies</p>
+              <p className="text-3xl font-black text-cyan-300">{companies.length}</p>
             </div>
-            <div className="bg-pink-500/10 rounded-xl p-3 border border-pink-500/30">
-              <p className="text-xs text-slate-400 mb-1">Total Devices</p>
-              <p className="text-2xl font-bold text-pink-400">{hardware.length}</p>
+            <div className="bg-gradient-to-br from-purple-500/15 to-pink-600/15 rounded-2xl p-4 border border-purple-400/40 hover:border-purple-400/60 transition-all">
+              <p className="text-xs text-slate-400 font-bold mb-2 uppercase tracking-wider">IoT Devices</p>
+              <p className="text-3xl font-black text-purple-300">{hardware.length}</p>
             </div>
           </div>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-700/30">
+          <div className="p-6 border-t border-slate-700/40">
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold py-2.5 rounded-lg transition border border-red-500/30 text-sm"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600/30 to-red-700/30 hover:from-red-600/50 hover:to-red-700/50 text-red-200 font-bold py-3 rounded-xl transition-all transform hover:scale-105 border border-red-500/40 text-sm shadow-lg hover:shadow-red-500/20"
             >
-              <LogOut size={16}/> Logout
+              <LogOut size={18}/> Logout
             </button>
           </div>
         </div>
@@ -172,66 +172,69 @@ const SuperDashboard = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-800/80 to-purple-800/80 backdrop-blur-xl border-b border-slate-700/50 px-8 py-6 flex items-center justify-between shadow-xl">
+          <div className="bg-gradient-to-r from-slate-800/60 via-cyan-800/40 to-slate-800/60 backdrop-blur-2xl border-b border-cyan-500/20 px-10 py-8 flex items-center justify-between shadow-2xl">
             <div>
-              <h1 className="text-3xl font-black text-white">Platform Owner</h1>
-              <p className="text-sm text-purple-200 mt-1">Manage all companies and IoT devices</p>
+              <h1 className="text-4xl font-black text-white drop-shadow-lg">Platform Owner</h1>
+              <p className="text-sm text-cyan-200 mt-2 font-semibold">Manage all companies and IoT devices globally</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-400 uppercase font-bold">Super Admin</p>
-              <p className="text-lg font-bold text-white">Control Center</p>
+            <div className="text-right bg-gradient-to-br from-cyan-500/15 to-blue-600/15 px-6 py-4 rounded-2xl border border-cyan-400/40">
+              <p className="text-xs text-slate-300 uppercase font-black tracking-wider">Access Level</p>
+              <p className="text-2xl font-black bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">SUPER ADMIN</p>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-8">
+          <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-slate-950/50 to-slate-900/50">
             <div className="space-y-8">
               
               {/* ===== CREATE COMPANY SECTION ===== */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* Create Company Form */}
-                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-600/50">
-                  <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                    <Plus className="text-purple-400" size={24} /> Create New Company
+                <div className="bg-gradient-to-br from-slate-800/60 via-slate-750/60 to-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-cyan-400/30 hover:border-cyan-400/50 transition-all">
+                  <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center">
+                      <Plus className="text-white" size={24} />
+                    </div>
+                    Create Company
                   </h3>
-                  <form onSubmit={handleCreate} className="space-y-4">
+                  <form onSubmit={handleCreate} className="space-y-5">
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-2">Company Name</label>
+                      <label className="block text-sm font-black text-cyan-300 mb-2 uppercase tracking-wider">Company Name</label>
                       <input 
                         placeholder="Acme Corporation" 
-                        className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-3 rounded-xl focus:border-purple-500 focus:outline-none transition"
+                        className="w-full bg-slate-700/40 border-2 border-slate-600/60 text-white placeholder-slate-500/80 p-4 rounded-2xl focus:border-cyan-400 focus:bg-slate-700/60 focus:outline-none transition text-sm font-semibold"
                         value={newCo.name} 
                         onChange={e => setNewCo({...newCo, name: e.target.value})} 
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-2">Admin Username</label>
+                      <label className="block text-sm font-black text-cyan-300 mb-2 uppercase tracking-wider">Admin Username</label>
                       <input 
                         placeholder="admin@company" 
-                        className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-3 rounded-xl focus:border-purple-500 focus:outline-none transition"
+                        className="w-full bg-slate-700/40 border-2 border-slate-600/60 text-white placeholder-slate-500/80 p-4 rounded-2xl focus:border-cyan-400 focus:bg-slate-700/60 focus:outline-none transition text-sm font-semibold"
                         value={newCo.admin_username} 
                         onChange={e => setNewCo({...newCo, admin_username: e.target.value})} 
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-2">Admin Password</label>
+                      <label className="block text-sm font-black text-cyan-300 mb-2 uppercase tracking-wider">Admin Password</label>
                       <input 
                         placeholder="••••••••" 
                         type="password" 
-                        className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-3 rounded-xl focus:border-purple-500 focus:outline-none transition"
+                        className="w-full bg-slate-700/40 border-2 border-slate-600/60 text-white placeholder-slate-500/80 p-4 rounded-2xl focus:border-cyan-400 focus:bg-slate-700/60 focus:outline-none transition text-sm font-semibold"
                         value={newCo.admin_pass} 
                         onChange={e => setNewCo({...newCo, admin_pass: e.target.value})} 
                         required
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">Plan</label>
+                        <label className="block text-sm font-black text-cyan-300 mb-2 uppercase tracking-wider">Plan</label>
                         <select 
-                          className="w-full bg-slate-700/50 border border-slate-600 text-white p-3 rounded-xl focus:border-purple-500 focus:outline-none transition"
+                          className="w-full bg-slate-700/40 border-2 border-slate-600/60 text-white p-4 rounded-2xl focus:border-cyan-400 focus:bg-slate-700/60 focus:outline-none transition text-sm font-semibold"
                           value={newCo.plan} 
                           onChange={e => setNewCo({...newCo, plan: e.target.value})}
                         >
@@ -240,9 +243,9 @@ const SuperDashboard = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">Hardware</label>
+                        <label className="block text-sm font-black text-cyan-300 mb-2 uppercase tracking-wider">Hardware</label>
                         <select 
-                          className="w-full bg-slate-700/50 border border-slate-600 text-white p-3 rounded-xl focus:border-purple-500 focus:outline-none transition"
+                          className="w-full bg-slate-700/40 border-2 border-slate-600/60 text-white p-4 rounded-2xl focus:border-cyan-400 focus:bg-slate-700/60 focus:outline-none transition text-sm font-semibold"
                           value={newCo.hardware_type} 
                           onChange={e => setNewCo({...newCo, hardware_type: e.target.value})}
                         >
@@ -254,35 +257,36 @@ const SuperDashboard = () => {
                     </div>
                     <button 
                       type="submit"
-                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
+                      className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-black py-4 rounded-2xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-2xl text-base tracking-wide"
                     >
-                      <Zap size={18} /> Create Company
+                      <Zap size={20} /> CREATE COMPANY
                     </button>
                   </form>
                 </div>
 
                 {/* Companies List */}
-                <div className="lg:col-span-2 bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-600/50">
-                  <div className="p-6 border-b border-slate-600/30 bg-gradient-to-r from-slate-700/50 to-slate-600/30">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Building2 className="text-purple-400" /> Registered Companies ({companies.length})
+                <div className="lg:col-span-2 bg-gradient-to-br from-slate-800/60 via-slate-750/60 to-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-cyan-400/30 hover:border-cyan-400/50 transition-all">
+                  <div className="p-6 border-b border-cyan-400/20 bg-gradient-to-r from-slate-700/40 to-slate-600/30">
+                    <h3 className="text-xl font-black text-white flex items-center gap-3">
+                      <Building2 className="text-cyan-400" size={24} /> Registered Companies
+                      <span className="ml-auto bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">{companies.length}</span>
                     </h3>
                   </div>
                   <div className="overflow-x-auto max-h-96">
                     <table className="w-full text-sm">
-                      <thead className="bg-slate-700/50 sticky top-0 border-b border-slate-600/30">
+                      <thead className="bg-slate-700/40 sticky top-0 border-b border-cyan-400/20">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-bold text-slate-300 uppercase">ID</th>
-                          <th className="px-6 py-3 text-left text-xs font-bold text-slate-300 uppercase">Company Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-bold text-slate-300 uppercase">Status</th>
-                          <th className="px-6 py-3 text-center text-xs font-bold text-slate-300 uppercase">Actions</th>
+                          <th className="px-6 py-4 text-left text-xs font-black text-cyan-300 uppercase tracking-wider">ID</th>
+                          <th className="px-6 py-4 text-left text-xs font-black text-cyan-300 uppercase tracking-wider">Company</th>
+                          <th className="px-6 py-4 text-left text-xs font-black text-cyan-300 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-4 text-center text-xs font-black text-cyan-300 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-600/30">
+                      <tbody className="divide-y divide-slate-700/40">
                         {companies.map(co => (
-                          <tr key={co.id} className="hover:bg-slate-700/30 transition">
+                          <tr key={co.id} className="hover:bg-slate-700/50 transition-all">
                             <td className="px-6 py-4">
-                              <code className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-mono text-xs font-bold border border-purple-500/30">#{co.id}</code>
+                              <code className="bg-gradient-to-r from-cyan-500/30 to-blue-600/30 text-cyan-300 px-3 py-1 rounded-lg font-mono text-xs font-black border border-cyan-400/40">#ID{co.id}</code>
                             </td>
                             <td className="px-6 py-4">
                               {editingCo === co.id ? (
