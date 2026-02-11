@@ -11,7 +11,9 @@ const SuperDashboard = () => {
   
   // Track editing states
   const [editingHw, setEditingHw] = useState(null); 
-  const [editingCo, setEditingCo] = useState(null);\n  const [tempName, setTempName] = useState("");\n  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [editingCo, setEditingCo] = useState(null);
+  const [tempName, setTempName] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navigate = useNavigate();
 
@@ -167,7 +169,8 @@ const SuperDashboard = () => {
               onClick={handleLogout}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600/30 to-red-700/30 hover:from-red-600/50 hover:to-red-700/50 text-red-200 font-bold py-2 md:py-3 rounded-xl transition-all transform hover:scale-105 border border-red-500/40 text-xs md:text-sm shadow-lg hover:shadow-red-500/20"
             >
-              <LogOut size={16}/> <span className=\"hidden sm:inline\">Logout</span>\n            </button>
+              <LogOut size={16}/> <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
 
@@ -192,11 +195,11 @@ const SuperDashboard = () => {
           </div>
 
           {/* Content Area */}
-          <div className=\"flex-1 overflow-auto p-4 md:p-8 bg-gradient-to-b from-slate-950/50 to-slate-900/50\">
-            <div className=\"space-y-6 md:space-y-8\">
+          <div className="flex-1 overflow-auto p-4 md:p-8 bg-gradient-to-b from-slate-950/50 to-slate-900/50">
+            <div className="space-y-6 md:space-y-8">
               
               {/* ===== CREATE COMPANY SECTION ===== */}
-              <div className=\"grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8\">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                 
                 {/* Create Company Form */}
                 <div className="bg-gradient-to-br from-slate-800/60 via-slate-750/60 to-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-blue-400/30 hover:border-blue-400/50 transition-all">
