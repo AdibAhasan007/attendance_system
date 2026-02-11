@@ -54,28 +54,28 @@ const Login = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-[#00755e] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-teal-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8 animate-fade-in-down">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#00755e] to-emerald-600 rounded-2xl shadow-2xl mb-4 transform hover:scale-110 transition-transform duration-300">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl shadow-2xl mb-4 transform hover:scale-110 transition-transform duration-300">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-5xl font-black text-white mb-2 tracking-tight">
-            Attendance<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">Pro</span>
+            Attendance<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Pro</span>
           </h1>
-          <p className="text-emerald-200 text-sm font-medium">Enterprise Workforce Management</p>
+          <p className="text-blue-200 text-sm font-medium">Enterprise Workforce Management</p>
         </div>
 
         {/* Login Card */}
-        <div className="backdrop-blur-xl bg-white/10 p-8 rounded-3xl shadow-2xl border border-white/20 animate-fade-in-up">
+        <div className="backdrop-blur-xl bg-white/10 p-8 rounded-3xl shadow-2xl border border-blue-400/30 animate-fade-in-up">
           {/* Role Tabs */}
           <div className="grid grid-cols-3 gap-2 mb-8">
             {roles.map(role => {
@@ -93,7 +93,7 @@ const Login = () => {
                   <div className="flex flex-col items-center gap-2">
                     <Icon className={`w-5 h-5 ${
                       activeTab === role.key 
-                        ? 'text-purple-600' 
+                        ? 'text-blue-600' 
                         : 'text-white/40 group-hover:text-white/60'
                     }`} />
                     <span>{role.label}</span>
@@ -110,10 +110,10 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative group">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <User className="w-5 h-5 text-emerald-300 group-focus-within:text-emerald-400 transition-colors" />
+                <User className="w-5 h-5 text-cyan-300 group-focus-within:text-cyan-400 transition-colors" />
               </div>
               <input
-                className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-emerald-200/50 focus:bg-white/20 focus:border-[#00755e] focus:outline-none focus:ring-2 focus:ring-[#00755e]/50 transition-all duration-300 backdrop-blur-sm"
+                className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-200/50 focus:bg-white/20 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 backdrop-blur-sm"
                 placeholder={activeTab === 'employee' ? 'Employee ID (e.g. EMP001)' : 'Username'}
                 onChange={e => setFormData({...formData, username: e.target.value})}
                 required
@@ -122,11 +122,11 @@ const Login = () => {
             
             <div className="relative group">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Lock className="w-5 h-5 text-emerald-300 group-focus-within:text-emerald-400 transition-colors" />
+                <Lock className="w-5 h-5 text-cyan-300 group-focus-within:text-cyan-400 transition-colors" />
               </div>
               <input
                 type="password"
-                className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-emerald-200/50 focus:bg-white/20 focus:border-[#00755e] focus:outline-none focus:ring-2 focus:ring-[#00755e]/50 transition-all duration-300 backdrop-blur-sm"
+                className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-200/50 focus:bg-white/20 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 backdrop-blur-sm"
                 placeholder="Password"
                 onChange={e => setFormData({...formData, password: e.target.value})}
                 required
@@ -135,7 +135,7 @@ const Login = () => {
 
             <button 
               disabled={loading}
-              className="w-full group relative overflow-hidden bg-gradient-to-r from-[#00755e] to-emerald-600 hover:from-emerald-700 hover:to-[#00755e] text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full group relative overflow-hidden bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {loading ? (
@@ -156,12 +156,12 @@ const Login = () => {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-emerald-200/60 text-xs">Secured with enterprise-grade encryption</p>
+            <p className="text-blue-200/60 text-xs">Secured with enterprise-grade encryption</p>
           </div>
         </div>
 
         {/* Bottom Text */}
-        <div className="text-center mt-6 text-emerald-200/40 text-xs">
+        <div className="text-center mt-6 text-blue-200/40 text-xs">
           © 2026 AttendancePro. All rights reserved.
         </div>
       </div>
