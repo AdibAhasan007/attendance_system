@@ -124,11 +124,11 @@ const SuperDashboard = () => {
                   <Shield className="w-5 md:w-7 h-5 md:w-7 text-white font-bold" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-black text-white text-sm md:text-lg truncate\">SUPER ADMIN</h3>
-                  <p className="text-xs text-blue-300 font-semibold truncate\">Platform Master</p>
+                  <h3 className="font-black text-white text-sm md:text-lg truncate">SUPER ADMIN</h3>
+                  <p className="text-xs text-blue-300 font-semibold truncate">Platform Master</p>
                 </div>
               </div>
-              <button onClick={() => setSidebarOpen(false)} className=\"md:hidden text-slate-400 hover:text-white flex-shrink-0\">
+              <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white flex-shrink-0">
                 <X size={20} />
               </button>
             </div>
