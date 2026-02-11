@@ -6,7 +6,7 @@ import {
   Building2, Users, Settings as SettingsIcon, LogOut, 
   Trash2, Power, UserCheck, Plus, Edit2, X, MapPin,
   Clock, Home, BarChart3, Zap, ChevronDown, Save, AlertCircle, 
-  Trophy, TrendingUp, HelpCircle, Fingerprint, Lock, Crosshair
+  Trophy, TrendingUp, HelpCircle, Fingerprint, Lock, Crosshair, Menu
 } from 'lucide-react';
 
 
@@ -19,6 +19,7 @@ const CompanyDashboard = () => {
   const [settings, setSettings] = useState({ lat: '', lng: '', radius: '50' });
   const [schedule, setSchedule] = useState({ start: '09:00', end: '17:00' });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -126,24 +127,27 @@ const CompanyDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 font-sans">
       <div className="flex h-screen overflow-hidden">
         
-        {/* ===== MODERN SIDEBAR ===== */}
-        <div className="w-64 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl">
+        {/* ===== MODERN SIDEBAR (Hidden on mobile) ===== */}
+        <div className={`transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed md:relative md:translate-x-0 w-60 md:w-64 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl z-50 h-full`}>
           
           {/* Sidebar Header */}
-          <div className="p-6 border-b border-slate-700/30">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <Building2 className="w-6 h-6 text-white" />
+          <div className="p-4 md:p-6 border-b border-slate-700/30 flex items-center justify-between">
+            <div className="flex items-center gap-3 mb-0 md:mb-0">
+              <div className="w-10 md:w-12 h-10 md:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <Building2 className="w-5 md:w-6 h-5 md:h-6 text-white" />
               </div>
-              <div>
-                <h3 className="font-bold text-white text-sm">Admin Panel</h3>
-                <p className="text-xs text-cyan-300">Company Management</p>
+              <div className="min-w-0">
+                <h3 className="font-bold text-white text-xs md:text-sm truncate">Admin Panel</h3>
+                <p className="text-xs text-blue-300">Company Mgmt</p>
               </div>
             </div>
+            <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white flex-shrink-0">
+              <X size={20} />
+            </button>
           </div>
 
           {/* Sidebar Menu */}
-          <div className="flex-1 p-4 space-y-2 mt-4">
+          <div className="flex-1 p-2 md:p-4 space-y-1 md:space-y-2 mt-2 md:mt-4">
             {[
               { id: 'staff', label: 'Staff Management', icon: Users },
               { id: 'control', label: 'Control Center', icon: Zap },
@@ -152,38 +156,39 @@ const CompanyDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full px-4 py-3 text-left rounded-xl font-semibold text-sm transition-all flex items-center gap-3 ${
+                className={`w-full px-3 md:px-4 py-2 md:py-3 text-left rounded-xl font-semibold text-xs md:text-sm transition-all flex items-center gap-2 md:gap-3 ${
                   activeTab === tab.id
                     ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 text-white border border-cyan-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/30'
                 }`}
               >
-                <tab.icon className="w-5 h-5" />
-                {tab.label}
+                <tab.icon className="w-4 md:w-5 h-4 md:h-5" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="inline sm:hidden text-[10px]">{tab.label.split(' ')[0]}</span>
               </button>
             ))}
           </div>
 
           {/* Quick Stats */}
-          <div className="p-4 border-t border-slate-700/30 space-y-3">
-            <div className="text-xs text-slate-400 uppercase font-bold mb-3">Quick Stats</div>
-            <div className="bg-blue-500/10 rounded-xl p-3 border border-blue-500/30">
-              <p className="text-xs text-slate-400 mb-1">Total Staff</p>
-              <p className="text-2xl font-bold text-blue-400">{employees.length}</p>
+          <div className="p-2 md:p-4 border-t border-slate-700/30 space-y-2 md:space-y-3">
+            <div className="text-xs text-slate-400 uppercase font-bold mb-2 md:mb-3">Stats</div>
+            <div className="bg-blue-500/10 rounded-xl p-2 md:p-3 border border-blue-500/30">
+              <p className="text-xs text-slate-400 mb-1">Staff</p>
+              <p className="text-xl md:text-2xl font-bold text-blue-400">{employees.length}</p>
             </div>
-            <div className="bg-purple-500/10 rounded-xl p-3 border border-purple-500/30">
-              <p className="text-xs text-slate-400 mb-1">Active Devices</p>
-              <p className="text-2xl font-bold text-purple-400">{devices.length}</p>
+            <div className="bg-purple-500/10 rounded-xl p-2 md:p-3 border border-purple-500/30">
+              <p className="text-xs text-slate-400 mb-1">Devices</p>
+              <p className="text-xl md:text-2xl font-bold text-purple-400">{devices.length}</p>
             </div>
           </div>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-700/30">
+          <div className="p-2 md:p-4 border-t border-slate-700/30">
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold py-2.5 rounded-lg transition border border-red-500/30 text-sm"
+              className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold py-2 md:py-2.5 rounded-lg transition border border-red-500/30 text-xs md:text-sm"
             >
-              <LogOut size={16}/> Logout
+              <LogOut size={16}/> <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -192,75 +197,80 @@ const CompanyDashboard = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-800/80 to-blue-800/80 backdrop-blur-xl border-b border-slate-700/50 px-8 py-6 flex items-center justify-between shadow-xl">
-            <div>
-              <h1 className="text-3xl font-black text-white">Company Admin</h1>
-              <p className="text-sm text-blue-200 mt-1">Manage your workforce and operations</p>
+          <div className="bg-gradient-to-r from-slate-800/80 to-blue-800/80 backdrop-blur-xl border-b border-slate-700/50 px-4 md:px-8 py-4 md:py-6 flex items-center justify-between shadow-xl">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-white hover:bg-slate-700/50 p-2 rounded-lg">
+                <Menu size={24} />
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-xl md:text-3xl font-black text-white">Company Admin</h1>
+                <p className="text-xs md:text-sm text-blue-200 mt-0.5 md:mt-1">Manage your workforce</p>
+              </div>
             </div>
-            <div className="text-right">
+            <div className="text-right hidden md:block">
               <p className="text-xs text-slate-400 uppercase font-bold">Administrator</p>
-              <p className="text-lg font-bold text-white">Portal</p>
+              <p className="text-sm md:text-lg font-bold text-white">Portal</p>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-8">
+          <div className="flex-1 overflow-auto p-4 md:p-8">
             
             {/* ===== STAFF TAB ===== */}
             {activeTab === 'staff' && (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-2 md:py-3 px-4 md:px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 text-sm md:text-base"
                 >
-                  <Plus size={20} /> Add New Employee
+                  <Plus size={18} /> Add Employee
                 </button>
 
                 {showAddForm && (
-                  <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-600/50">
-                    <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                      <UserCheck className="text-cyan-400" /> Add New Employee
+                  <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-4 md:p-8 border border-slate-600/50">
+                    <h3 className="text-lg md:text-xl font-black text-white mb-4 md:mb-6 flex items-center gap-2">
+                      <UserCheck className="text-blue-400" size={20} /> Add New Employee
                     </h3>
-                    <form onSubmit={handleAddEmployee} className="grid grid-cols-2 gap-6">
+                    <form onSubmit={handleAddEmployee} className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">Employee ID</label>
+                        <label className="block text-xs md:text-sm font-bold text-blue-300 mb-2">Employee ID</label>
                         <input
                           type="text"
                           placeholder="EMP001"
                           value={newEmp.employee_id}
                           onChange={(e) => setNewEmp({...newEmp, employee_id: e.target.value})}
-                          className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-3 rounded-xl focus:border-cyan-500 focus:outline-none transition"
+                          className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-2 md:p-3 rounded-xl focus:border-blue-500 focus:outline-none transition text-sm"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">Full Name</label>
+                        <label className="block text-xs md:text-sm font-bold text-blue-300 mb-2">Full Name</label>
                         <input
                           type="text"
                           placeholder="John Doe"
                           value={newEmp.name}
                           onChange={(e) => setNewEmp({...newEmp, name: e.target.value})}
-                          className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-3 rounded-xl focus:border-cyan-500 focus:outline-none transition"
+                          className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-2 md:p-3 rounded-xl focus:border-blue-500 focus:outline-none transition text-sm"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">Password</label>
+                        <label className="block text-xs md:text-sm font-bold text-blue-300 mb-2">Password</label>
                         <input
                           type="password"
                           placeholder="••••••••"
                           value={newEmp.password}
                           onChange={(e) => setNewEmp({...newEmp, password: e.target.value})}
-                          className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-3 rounded-xl focus:border-cyan-500 focus:outline-none transition"
+                          className="w-full bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 p-2 md:p-3 rounded-xl focus:border-blue-500 focus:outline-none transition text-sm"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">Role</label>
+                        <label className="block text-xs md:text-sm font-bold text-blue-300 mb-2">Role</label>
                         <select
                           value={newEmp.role}
                           onChange={(e) => setNewEmp({...newEmp, role: e.target.value})}
-                          className="w-full bg-slate-700/50 border border-slate-600 text-white p-3 rounded-xl focus:border-cyan-500 focus:outline-none transition"
+                          className="w-full bg-slate-700/50 border border-slate-600 text-white p-2 md:p-3 rounded-xl focus:border-blue-500 focus:outline-none transition text-sm"
                         >
                           <option>Staff</option>
                           <option>Manager</option>
@@ -268,17 +278,17 @@ const CompanyDashboard = () => {
                           <option>Marketing</option>
                         </select>
                       </div>
-                      <div className="col-span-2 flex gap-4">
+                      <div className="col-span-1 md:col-span-2 flex flex-col md:flex-row gap-3 md:gap-4">
                         <button
                           type="submit"
-                          className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 rounded-xl transition-all"
+                          className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-2 md:py-3 rounded-xl transition-all text-sm md:text-base"
                         >
                           Add Employee
                         </button>
                         <button
                           type="button"
                           onClick={() => setShowAddForm(false)}
-                          className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 rounded-xl transition-all"
+                          className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 md:py-3 rounded-xl transition-all text-sm md:text-base"
                         >
                           Cancel
                         </button>

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { 
   LogOut, User, Calendar as CalendarIcon, 
   CheckCircle, AlertTriangle, XCircle, BarChart3,
-  Home, Settings, Clock, TrendingUp, Users, HelpCircle, ChevronLeft, ChevronRight
+  Home, Settings, Clock, TrendingUp, Users, HelpCircle, ChevronLeft, ChevronRight, X, Menu
 } from 'lucide-react';
 
 const EmployeeDashboard = () => {
@@ -15,6 +15,7 @@ const EmployeeDashboard = () => {
   const [todayLog, setTodayLog] = useState(null); 
   const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navigate = useNavigate();
 
@@ -194,75 +195,80 @@ const EmployeeDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 font-sans">
       <div className="flex h-screen overflow-hidden">
         
-        {/* ===== MODERN SIDEBAR ===== */}
-        <div className="w-64 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl">
+        {/* ===== MODERN SIDEBAR (Hidden on mobile) ===== */}
+        <div className={`transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed md:relative md:translate-x-0 w-60 md:w-64 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl z-50 h-full`}>
           
           {/* Sidebar Header */}
-          <div className="p-6 border-b border-slate-700/30">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <User className="w-6 h-6 text-white" />
+          <div className=\"p-4 md:p-6 border-b border-slate-700/30\">
+            <div className=\"flex items-center gap-3 mb-4 justify-between\">
+              <div className=\"flex items-center gap-3 flex-1 min-w-0\">
+                <div className=\"w-10 md:w-12 h-10 md:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0\">
+                  <User className=\"w-5 md:w-6 h-5 md:h-6 text-white\" />
+                </div>
+                <div className=\"flex-1 min-w-0\">
+                  <h3 className=\"font-bold text-white text-xs md:text-sm truncate\">{profile.name}</h3>
+                  <p className=\"text-xs text-blue-300 truncate\">{profile.employee_id}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-white text-sm truncate">{profile.name}</h3>
-                <p className="text-xs text-blue-300 truncate">{profile.employee_id}</p>
-              </div>
+              <button onClick={() => setSidebarOpen(false)} className=\"md:hidden text-slate-400 hover:text-white\">
+                <X size={20} />
+              </button>
             </div>
-            <div className="inline-block px-3 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30 rounded-full text-xs font-bold uppercase">
+            <div className=\"inline-block px-3 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30 rounded-full text-xs font-bold uppercase\">
               {profile.role}
             </div>
           </div>
 
           {/* Sidebar Menu */}
-          <div className="flex-1 p-4 space-y-2 mt-4">
-            <div className="px-4 py-3 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 rounded-xl border border-blue-500/30 text-blue-200 text-sm font-semibold flex items-center gap-3">
-              <Home className="w-5 h-5" />
-              Dashboard
+          <div className=\"flex-1 p-2 md:p-4 space-y-1 md:space-y-2 mt-2 md:mt-4\">
+            <div className=\"px-3 md:px-4 py-2 md:py-3 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 rounded-xl border border-blue-500/30 text-blue-200 text-xs md:text-sm font-semibold flex items-center gap-2 md:gap-3\">
+              <Home className=\"w-4 md:w-5 h-4 md:h-5\" />
+              <span className=\"hidden sm:inline\">Dashboard</span>
             </div>
-            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
-              <BarChart3 className="w-5 h-5" />
-              Analytics
+            <div className=\"px-3 md:px-4 py-2 text-slate-400 hover:text-slate-200 text-xs md:text-sm font-medium flex items-center gap-2 md:gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30\">
+              <BarChart3 className=\"w-4 md:w-5 h-4 md:h-5\" />
+              <span className=\"hidden sm:inline\">Analytics</span>
             </div>
-            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
-              <Clock className="w-5 h-5" />
-              Time Sheet
+            <div className=\"px-3 md:px-4 py-2 text-slate-400 hover:text-slate-200 text-xs md:text-sm font-medium flex items-center gap-2 md:gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30\">
+              <Clock className=\"w-4 md:w-5 h-4 md:h-5\" />
+              <span className=\"hidden sm:inline\">Time Sheet</span>
             </div>
-            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
-              <Settings className="w-5 h-5" />
-              Settings
+            <div className=\"px-3 md:px-4 py-2 text-slate-400 hover:text-slate-200 text-xs md:text-sm font-medium flex items-center gap-2 md:gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30\">
+              <Settings className=\"w-4 md:w-5 h-4 md:h-5\" />
+              <span className=\"hidden sm:inline\">Settings</span>
             </div>
-            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
-              <HelpCircle className="w-5 h-5" />
-              Help
+            <div className=\"px-3 md:px-4 py-2 text-slate-400 hover:text-slate-200 text-xs md:text-sm font-medium flex items-center gap-2 md:gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30\">
+              <HelpCircle className=\"w-4 md:w-5 h-4 md:h-5\" />
+              <span className=\"hidden sm:inline\">Help</span>
             </div>
           </div>
 
           {/* Stats Panel in Sidebar */}
-          <div className="p-4 border-t border-slate-700/30">
-            <div className="text-xs text-slate-400 uppercase font-bold mb-3">Monthly Stats</div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300 flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> Present</span>
-                <span className="font-bold text-green-400 text-lg">{stats.present}</span>
+          <div className=\"p-2 md:p-4 border-t border-slate-700/30\">
+            <div className=\"text-xs text-slate-400 uppercase font-bold mb-2 md:mb-3\">Monthly Stats</div>
+            <div className=\"space-y-1 md:space-y-2\">
+              <div className=\"flex items-center justify-between text-xs\">
+                <span className=\"text-slate-300 flex items-center gap-1 md:gap-2\"><CheckCircle className=\"w-3 md:w-4 h-3 md:h-4 text-green-400\" /> <span className=\"hidden md:inline\">Present</span><span className=\"md:hidden\">OK</span></span>
+                <span className=\"font-bold text-green-400\">{stats.present}</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-orange-400" /> Late</span>
-                <span className="font-bold text-orange-400 text-lg">{stats.late}</span>
+              <div className=\"flex items-center justify-between text-xs\">
+                <span className=\"text-slate-300 flex items-center gap-1 md:gap-2\"><AlertTriangle className=\"w-3 md:w-4 h-3 md:h-4 text-orange-400\" /> <span className=\"hidden md:inline\">Late</span></span>
+                <span className=\"font-bold text-orange-400\">{stats.late}</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300 flex items-center gap-2"><XCircle className="w-4 h-4 text-red-400" /> Absent</span>
-                <span className="font-bold text-red-400 text-lg">{stats.absent}</span>
+              <div className=\"flex items-center justify-between text-xs\">
+                <span className=\"text-slate-300 flex items-center gap-1 md:gap-2\"><XCircle className=\"w-3 md:w-4 h-3 md:h-4 text-red-400\" /> <span className=\"hidden md:inline\">Absent</span></span>
+                <span className=\"font-bold text-red-400\">{stats.absent}</span>
               </div>
             </div>
           </div>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-700/30">
+          <div className=\"p-2 md:p-4 border-t border-slate-700/30\">
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold py-2.5 rounded-lg transition border border-red-500/30 text-sm"
+              className=\"w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold py-2 md:py-2.5 rounded-lg transition border border-red-500/30 text-xs md:text-sm\"
             >
-              <LogOut size={16}/> Logout
+              <LogOut size={16}/> <span className=\"hidden sm:inline\">Logout</span>
             </button>
           </div>
         </div>
@@ -271,55 +277,60 @@ const EmployeeDashboard = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-800/80 to-blue-800/80 backdrop-blur-xl border-b border-slate-700/50 px-8 py-6 flex items-center justify-between shadow-xl">
-            <div>
-              <h1 className="text-3xl font-black text-white">My Attendance</h1>
-              <p className="text-sm text-blue-200 mt-1">Track your daily presence and performance</p>
+          <div className=\"bg-gradient-to-r from-slate-800/80 to-blue-800/80 backdrop-blur-xl border-b border-slate-700/50 px-4 md:px-8 py-4 md:py-6 flex items-center justify-between shadow-xl\">
+            <div className=\"flex items-center gap-4 flex-1 min-w-0\">
+              <button onClick={() => setSidebarOpen(true)} className=\"md:hidden text-white hover:bg-slate-700/50 p-2 rounded-lg\">
+                <Menu size={24} />
+              </button>
+              <div className=\"min-w-0\">
+                <h1 className=\"text-xl md:text-3xl font-black text-white\">My Attendance</h1>
+                <p className=\"text-xs md:text-sm text-blue-200 mt-0.5 md:mt-1\">Track your daily presence</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-400 uppercase font-bold">Welcome back,</p>
-              <p className="text-lg font-bold text-white">{profile.name}</p>
+            <div className=\"text-right hidden md:block\">
+              <p className=\"text-xs text-slate-400 uppercase font-bold\">Welcome back,</p>
+              <p className=\"text-sm md:text-lg font-bold text-white\">{profile.name}</p>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-8">
-            <div className="grid grid-cols-3 gap-8 h-full">
+          <div className=\"flex-1 overflow-auto p-4 md:p-8\">
+            <div className=\"grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 h-full auto-rows-max lg:auto-rows-auto\">
               
               {/* ===== MODERN iPhone-STYLE CALENDAR ===== */}
-              <div className="col-span-2 space-y-6">
-                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-600/50">
+              <div className="lg:col-span-2 space-y-4 md:space-y-6">
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-4 md:p-8 border border-slate-600/50">
                   
                   {/* Calendar Header */}
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center justify-between mb-4 md:mb-8">
                     <button 
                       onClick={previousMonth}
                       className="p-2 hover:bg-slate-600/50 rounded-xl transition text-slate-300 hover:text-white"
                     >
-                      <ChevronLeft className="w-6 h-6" />
+                      <ChevronLeft className="w-5 md:w-6 h-5 md:h-6" />
                     </button>
-                    <h2 className="text-2xl font-black text-white bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h2 className="text-lg md:text-2xl font-black text-white bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                       {monthName}
                     </h2>
                     <button 
                       onClick={nextMonth}
                       className="p-2 hover:bg-slate-600/50 rounded-xl transition text-slate-300 hover:text-white"
                     >
-                      <ChevronRight className="w-6 h-6" />
+                      <ChevronRight className="w-5 md:w-6 h-5 md:h-6" />
                     </button>
                   </div>
 
                   {/* Week Days Header */}
-                  <div className="grid grid-cols-7 gap-2 mb-4">
-                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
-                      <div key={day} className="text-center text-xs font-bold text-slate-400 py-2 uppercase tracking-wider">
+                  <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2 md:mb-4">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                      <div key={day} className="text-center text-xs font-bold text-slate-400 py-1 md:py-2 uppercase tracking-wider">
                         {day}
                       </div>
                     ))}
                   </div>
 
                   {/* Calendar Days */}
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1 md:gap-2">
                     {calendarDays.map((date, idx) => {
                       if (!date) {
                         return <div key={`empty-${idx}`} className="aspect-square"></div>;
@@ -384,16 +395,16 @@ const EmployeeDashboard = () => {
                 </div>
 
                 {/* Details Card */}
-                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-600/50">
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-4 md:p-8 border border-slate-600/50">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Details for {selectedDate.toLocaleDateString()}</h3>
                   {todayLog ? (
-                    <div className="flex items-center gap-4">
-                      <div className={`p-4 rounded-2xl ${todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
-                        {todayLog.status && todayLog.status.toLowerCase() === 'late' ? <AlertTriangle size={32}/> : <CheckCircle size={32}/>}
+                    <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4">
+                      <div className={`p-3 md:p-4 rounded-2xl flex-shrink-0 ${todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                        {todayLog.status && todayLog.status.toLowerCase() === 'late' ? <AlertTriangle size={24}/> : <CheckCircle size={24}/>}
                       </div>
                       <div>
-                        <h4 className="font-black text-2xl text-white">You were <span className={todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'text-orange-400' : 'text-green-400'}>{todayLog.status}</span></h4>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h4 className="font-black text-lg md:text-2xl text-white">You were <span className={todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'text-orange-400' : 'text-green-400'}>{todayLog.status}</span></h4>
+                        <p className="text-slate-400 text-xs md:text-sm mt-1">
                           Check-in: <span className="font-bold text-slate-200">
                             {new Date(todayLog.check_in_time || todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
@@ -401,15 +412,15 @@ const EmployeeDashboard = () => {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-slate-400 italic text-center py-8">No attendance record for this day.</p>
+                    <p className="text-slate-400 italic text-center py-6 md:py-8 text-sm\">No attendance record for this day.</p>
                   )}
                 </div>
               </div>
 
               {/* ===== RIGHT SIDE: PERFORMANCE CARD ===== */}
-              <div className="col-span-1 space-y-6">
+              <div className="lg:col-span-1 space-y-4 md:space-y-6\">
                 {/* Performance Score */}
-                <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-blue-400/30 flex flex-col h-64">
+                <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-xl rounded-3xl shadow-2xl p-4 md:p-8 border border-blue-400/30 flex flex-col md:h-64\">
                   <h3 className="text-sm font-bold text-slate-400 uppercase mb-6">Performance Score</h3>
                   <div className="flex-1 flex flex-col items-center justify-center">
                     <div className="relative w-24 h-24 mb-4">
@@ -443,26 +454,26 @@ const EmployeeDashboard = () => {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="space-y-3">
-                  <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-5 border border-green-400/30 hover:border-green-400/50 transition">
-                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">Present Days</p>
-                    <p className="text-3xl font-black text-green-400">{stats.present}</p>
+                <div className="space-y-2 md:space-y-3\">
+                  <div className=\"bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-4 md:p-5 border border-green-400/30 hover:border-green-400/50 transition\">
+                    <p className=\"text-xs text-slate-400 font-bold uppercase mb-1\">Present Days</p>
+                    <p className=\"text-2xl md:text-3xl font-black text-green-400\">{stats.present}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl rounded-2xl p-5 border border-orange-400/30 hover:border-orange-400/50 transition">
-                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">Late Arrivals</p>
-                    <p className="text-3xl font-black text-orange-400">{stats.late}</p>
+                  <div className=\"bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl rounded-2xl p-4 md:p-5 border border-orange-400/30 hover:border-orange-400/50 transition\">
+                    <p className=\"text-xs text-slate-400 font-bold uppercase mb-1\">Late Arrivals</p>
+                    <p className=\"text-2xl md:text-3xl font-black text-orange-400\">{stats.late}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-red-500/20 to-rose-500/20 backdrop-blur-xl rounded-2xl p-5 border border-red-400/30 hover:border-red-400/50 transition">
-                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">Absent Days</p>
-                    <p className="text-3xl font-black text-red-400">{stats.absent}</p>
+                  <div className=\"bg-gradient-to-br from-red-500/20 to-rose-500/20 backdrop-blur-xl rounded-2xl p-4 md:p-5 border border-red-400/30 hover:border-red-400/50 transition\">
+                    <p className=\"text-xs text-slate-400 font-bold uppercase mb-1\">Absent Days</p>
+                    <p className=\"text-2xl md:text-3xl font-black text-red-400\">{stats.absent}</p>
                   </div>
                 </div>
 
                 {/* Info Card */}
-                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-600/50">
-                  <p className="text-xs text-slate-400 font-bold uppercase mb-3">Current Month</p>
-                  <p className="text-2xl font-black text-white mb-2">{monthName}</p>
-                  <p className="text-xs text-slate-400">Total working days tracked</p>
+                <div className=\"bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-2xl p-4 md:p-5 border border-slate-600/50\">
+                  <p className=\"text-xs text-slate-400 font-bold uppercase mb-2 md:mb-3\">Current Month</p>
+                  <p className=\"text-xl md:text-2xl font-black text-white mb-1 md:mb-2\">{monthName}</p>
+                  <p className=\"text-xs text-slate-400\">Total working days tracked</p>
                 </div>
               </div>
 

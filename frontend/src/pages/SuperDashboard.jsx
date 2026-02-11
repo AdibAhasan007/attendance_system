@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { superAdminService } from '../services/api';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Server, Shield, LogOut, Trash2, Edit2, Power, X, Check, Plus, Building2, Zap, Home, Settings, BarChart3, TrendingUp, Users, HelpCircle, ChevronDown } from 'lucide-react';
+import { Server, Shield, LogOut, Trash2, Edit2, Power, X, Check, Plus, Building2, Zap, Home, Settings, BarChart3, TrendingUp, Users, HelpCircle, ChevronDown, Menu } from 'lucide-react';
 
 const SuperDashboard = () => {
   const [companies, setCompanies] = useState([]);
@@ -11,8 +11,7 @@ const SuperDashboard = () => {
   
   // Track editing states
   const [editingHw, setEditingHw] = useState(null); 
-  const [editingCo, setEditingCo] = useState(null);
-  const [tempName, setTempName] = useState("");
+  const [editingCo, setEditingCo] = useState(null);\n  const [tempName, setTempName] = useState("");\n  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navigate = useNavigate();
 
@@ -112,19 +111,24 @@ const SuperDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 font-sans">
       <div className="flex h-screen overflow-hidden">
         
-        {/* ===== MODERN SIDEBAR ===== */}
-        <div className="w-72 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl">
+        {/* ===== MODERN SIDEBAR (Hidden on mobile) ===== */}
+        <div className={`transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed md:relative md:translate-x-0 w-60 md:w-72 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl z-50 h-full`}>
           
           {/* Sidebar Header */}
-          <div className="p-8 border-b border-slate-700/40">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-14 h-14 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform">
-                <Shield className="w-7 h-7 text-white font-bold" />
+          <div className="p-4 md:p-8 border-b border-slate-700/40">
+            <div className="flex items-center gap-2 md:gap-4 mb-0 md:mb-2 justify-between">
+              <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                <div className="w-10 md:w-14 h-10 md:h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform flex-shrink-0">
+                  <Shield className="w-5 md:w-7 h-5 md:w-7 text-white font-bold" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black text-white text-sm md:text-lg truncate\">SUPER ADMIN</h3>
+                  <p className="text-xs text-blue-300 font-semibold truncate\">Platform Master</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-white text-lg">SUPER ADMIN</h3>
-                <p className="text-xs text-cyan-300 font-semibold">Platform Master</p>
-              </div>
+              <button onClick={() => setSidebarOpen(false)} className=\"md:hidden text-slate-400 hover:text-white flex-shrink-0\">
+                <X size={20} />
+              </button>
             </div>
           </div>
 
@@ -158,13 +162,12 @@ const SuperDashboard = () => {
           </div>
 
           {/* Sidebar Footer */}
-          <div className="p-6 border-t border-slate-700/40">
+          <div className="p-4 md:p-6 border-t border-slate-700/40">
             <button 
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600/30 to-red-700/30 hover:from-red-600/50 hover:to-red-700/50 text-red-200 font-bold py-3 rounded-xl transition-all transform hover:scale-105 border border-red-500/40 text-sm shadow-lg hover:shadow-red-500/20"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600/30 to-red-700/30 hover:from-red-600/50 hover:to-red-700/50 text-red-200 font-bold py-2 md:py-3 rounded-xl transition-all transform hover:scale-105 border border-red-500/40 text-xs md:text-sm shadow-lg hover:shadow-red-500/20"
             >
-              <LogOut size={18}/> Logout
-            </button>
+              <LogOut size={16}/> <span className=\"hidden sm:inline\">Logout</span>\n            </button>
           </div>
         </div>
 
@@ -172,23 +175,28 @@ const SuperDashboard = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-800/60 via-blue-800/40 to-slate-800/60 backdrop-blur-2xl border-b border-blue-500/20 px-10 py-8 flex items-center justify-between shadow-2xl">
-            <div>
-              <h1 className="text-4xl font-black text-white drop-shadow-lg">Platform Owner</h1>
-              <p className="text-sm text-blue-200 mt-2 font-semibold">Manage all companies and IoT devices globally</p>
+          <div className="bg-gradient-to-r from-slate-800/60 via-blue-800/40 to-slate-800/60 backdrop-blur-2xl border-b border-blue-500/20 px-4 md:px-10 py-4 md:py-8 flex items-center justify-between shadow-2xl">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-white hover:bg-slate-700/50 p-2 rounded-lg">
+                <Menu size={24} />
+              </button>
+              <div className="min-w-0">
+              <h1 className="text-xl md:text-4xl font-black text-white drop-shadow-lg">Platform Owner</h1>
+              <p className="text-xs md:text-sm text-blue-200 mt-0.5 md:mt-2 font-semibold">Manage all companies</p>
             </div>
-            <div className="text-right bg-gradient-to-br from-blue-500/15 to-cyan-600/15 px-6 py-4 rounded-2xl border border-blue-400/40">
+            </div>
+            <div className="text-right bg-gradient-to-br from-blue-500/15 to-cyan-600/15 px-3 md:px-6 py-2 md:py-4 rounded-2xl border border-blue-400/40 hidden md:block">
               <p className="text-xs text-slate-300 uppercase font-black tracking-wider">Access Level</p>
-              <p className="text-2xl font-black bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">SUPER ADMIN</p>
+              <p className="text-lg md:text-2xl font-black bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">SUPER ADMIN</p>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-slate-950/50 to-slate-900/50">
-            <div className="space-y-8">
+          <div className=\"flex-1 overflow-auto p-4 md:p-8 bg-gradient-to-b from-slate-950/50 to-slate-900/50\">
+            <div className=\"space-y-6 md:space-y-8\">
               
               {/* ===== CREATE COMPANY SECTION ===== */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className=\"grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8\">
                 
                 {/* Create Company Form */}
                 <div className="bg-gradient-to-br from-slate-800/60 via-slate-750/60 to-slate-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-blue-400/30 hover:border-blue-400/50 transition-all">
