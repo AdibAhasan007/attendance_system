@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { employeeService } from '../services/api';
 import toast from 'react-hot-toast';
-import Calendar from 'react-calendar'; 
-import 'react-calendar/dist/Calendar.css'; 
 import { 
   LogOut, User, Calendar as CalendarIcon, 
-  CheckCircle, AlertTriangle, XCircle, BarChart3
+  CheckCircle, AlertTriangle, XCircle, BarChart3,
+  Home, Settings, Clock, TrendingUp, Users, HelpCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const EmployeeDashboard = () => {
@@ -15,6 +14,7 @@ const EmployeeDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [todayLog, setTodayLog] = useState(null); 
   const [stats, setStats] = useState({ present: 0, late: 0, absent: 0 });
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const navigate = useNavigate();
 
@@ -26,10 +26,10 @@ const EmployeeDashboard = () => {
   // Recalculate stats whenever history updates
   useEffect(() => {
     if (history.length > 0) {
-      calculateMonthlyStats(new Date()); // Calculate for current month initially
-      handleDateClick(new Date());     // Select today
+      calculateMonthlyStats(currentMonth);
+      handleDateClick(new Date());
     }
-  }, [history]);
+  }, [history, currentMonth]);
 
   const loadProfile = async () => {
     try {
@@ -44,27 +44,20 @@ const EmployeeDashboard = () => {
   const loadHistory = async () => {
     try {
       const res = await employeeService.getHistory();
-      
-      // ✅ FIX 1: DEDUPLICATE HISTORY (Keep only the first log per day)
-      // This prevents "3 Presents" for 1 day in the stats.
       const uniqueMap = new Map();
       res.data.forEach(log => {
-        // Assume log.date_only is "YYYY-MM-DD"
         if (!uniqueMap.has(log.date_only)) {
           uniqueMap.set(log.date_only, log);
         }
       });
       
       const uniqueHistory = Array.from(uniqueMap.values());
-      console.log("Unique Daily Logs:", uniqueHistory); // Debugging
       setHistory(uniqueHistory);
-
     } catch (err) {
       console.error("Failed to load history");
     }
   };
 
-  // ✅ HELPER: Format Date to "YYYY-MM-DD" safely
   const formatDateKey = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -79,9 +72,7 @@ const EmployeeDashboard = () => {
     setTodayLog(log || null);
   };
 
-  // ✅ FIX 2: ROBUST STATS CALCULATION
   const calculateMonthlyStats = (referenceDate) => {
-    // We calculate stats for the MONTH currently being viewed (referenceDate)
     const viewYear = referenceDate.getFullYear();
     const viewMonth = referenceDate.getMonth();
 
@@ -91,7 +82,6 @@ const EmployeeDashboard = () => {
       return (m - 1) === viewMonth && y === viewYear;
     });
 
-    // Count Present & Late (Case Insensitive)
     let presentCount = 0;
     let lateCount = 0;
 
@@ -101,11 +91,8 @@ const EmployeeDashboard = () => {
         else if (status === 'present') presentCount++;
     });
 
-    // Calculate Absent Days (Business Days Passed - Attended Days)
     let workingDaysCount = 0;
     const now = new Date();
-    
-    // Determine the last day to count (Today if current month, else end of month)
     const isCurrentMonth = viewMonth === now.getMonth() && viewYear === now.getFullYear();
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const limitDay = isCurrentMonth ? now.getDate() : daysInMonth;
@@ -113,110 +100,372 @@ const EmployeeDashboard = () => {
     for (let i = 1; i <= limitDay; i++) {
       const dayCheck = new Date(viewYear, viewMonth, i);
       const dayOfWeek = dayCheck.getDay();
-      // Exclude Sun(0) and Sat(6)
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         workingDaysCount++;
       }
     }
 
     const totalAttended = presentCount + lateCount;
-    // Absent cannot be negative
     const absentCount = Math.max(0, workingDaysCount - totalAttended);
 
     setStats({ present: presentCount, late: lateCount, absent: absentCount });
   };
 
-  const getTileClassName = ({ date, view }) => {
-    if (view === 'month') {
-      const dateKey = formatDateKey(date); 
-      const today = new Date();
-      today.setHours(0,0,0,0);
-
-      const log = history.find(l => l.date_only === dateKey);
-      
-      if (log) {
-        // Case insensitive check
-        const isLate = log.status && log.status.toLowerCase() === 'late';
-        return isLate 
-          ? 'bg-orange-100 text-orange-600 font-bold rounded-md' 
-          : 'bg-green-100 text-green-600 font-bold rounded-md';
-      }
-
-      // Check for Absent
-      if (date < today && date.getDay() !== 0 && date.getDay() !== 6) {
-        return 'bg-red-100 text-red-600 font-bold rounded-md';
-      }
+  const getDateStatus = (date) => {
+    const dateKey = formatDateKey(date);
+    const log = history.find(l => l.date_only === dateKey);
+    
+    if (log) {
+      const status = log.status ? log.status.toLowerCase() : "";
+      if (status === 'late') return 'late';
+      if (status === 'present') return 'present';
     }
-    return null;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    if (date < today && date.getDay() !== 0 && date.getDay() !== 6) {
+      return 'absent';
+    }
+    return 'none';
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('company_id');
     navigate('/');
   };
 
-  if (!profile) return <div className="p-8 text-center">Loading Profile...</div>;
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const generateCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const days = [];
+
+    // Empty cells for days before month starts
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+
+    // Days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
+    }
+
+    return days;
+  };
+
+  const previousMonth = () => {
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(newMonth.getMonth() - 1);
+    setCurrentMonth(newMonth);
+  };
+
+  const nextMonth = () => {
+    const newMonth = new Date(currentMonth);
+    newMonth.setMonth(newMonth.getMonth() + 1);
+    setCurrentMonth(newMonth);
+  };
+
+  if (!profile) return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="text-white text-xl font-semibold">Loading Profile...</div>
+    </div>
+  );
+
+  const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const calendarDays = generateCalendarDays();
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 font-sans">
+      <div className="flex h-screen overflow-hidden">
         
-        {/* Left Column: Profile */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center">
-            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600"><User size={32} /></div>
-            <h2 className="text-xl font-bold text-slate-800">{profile.name}</h2>
-            <p className="text-sm text-slate-500 font-mono mb-4">{profile.employee_id}</p>
-            <div className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase">{profile.role}</div>
+        {/* ===== MODERN SIDEBAR ===== */}
+        <div className="w-64 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl">
+          
+          {/* Sidebar Header */}
+          <div className="p-6 border-b border-slate-700/30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-white text-sm truncate">{profile.name}</h3>
+                <p className="text-xs text-blue-300 truncate">{profile.employee_id}</p>
+              </div>
+            </div>
+            <div className="inline-block px-3 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30 rounded-full text-xs font-bold uppercase">
+              {profile.role}
+            </div>
           </div>
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-red-500 font-bold p-4 hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100 bg-white shadow-sm"><LogOut size={18}/> Logout</button>
+
+          {/* Sidebar Menu */}
+          <div className="flex-1 p-4 space-y-2 mt-4">
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 rounded-xl border border-blue-500/30 text-blue-200 text-sm font-semibold flex items-center gap-3">
+              <Home className="w-5 h-5" />
+              Dashboard
+            </div>
+            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
+              <BarChart3 className="w-5 h-5" />
+              Analytics
+            </div>
+            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
+              <Clock className="w-5 h-5" />
+              Time Sheet
+            </div>
+            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
+              <Settings className="w-5 h-5" />
+              Settings
+            </div>
+            <div className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm font-medium flex items-center gap-3 cursor-pointer transition rounded-lg hover:bg-slate-700/30">
+              <HelpCircle className="w-5 h-5" />
+              Help
+            </div>
+          </div>
+
+          {/* Stats Panel in Sidebar */}
+          <div className="p-4 border-t border-slate-700/30">
+            <div className="text-xs text-slate-400 uppercase font-bold mb-3">Monthly Stats</div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400" /> Present</span>
+                <span className="font-bold text-green-400 text-lg">{stats.present}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-orange-400" /> Late</span>
+                <span className="font-bold text-orange-400 text-lg">{stats.late}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 flex items-center gap-2"><XCircle className="w-4 h-4 text-red-400" /> Absent</span>
+                <span className="font-bold text-red-400 text-lg">{stats.absent}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-slate-700/30">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold py-2.5 rounded-lg transition border border-red-500/30 text-sm"
+            >
+              <LogOut size={16}/> Logout
+            </button>
+          </div>
         </div>
 
-        {/* Right Column: Calendar */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><CalendarIcon className="text-blue-600"/> My Attendance</h2>
-              <div className="flex gap-3 text-xs font-bold">
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-green-100 border border-green-500 rounded-full"></span> Present</div>
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-orange-100 border border-orange-500 rounded-full"></span> Late</div>
-                <div className="flex items-center gap-1"><span className="w-3 h-3 bg-red-100 border border-red-500 rounded-full"></span> Absent</div>
-              </div>
+        {/* ===== MAIN CONTENT ===== */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          
+          {/* Header */}
+          <div className="bg-gradient-to-r from-slate-800/80 to-blue-800/80 backdrop-blur-xl border-b border-slate-700/50 px-8 py-6 flex items-center justify-between shadow-xl">
+            <div>
+              <h1 className="text-3xl font-black text-white">My Attendance</h1>
+              <p className="text-sm text-blue-200 mt-1">Track your daily presence and performance</p>
             </div>
-            <div className="calendar-wrapper custom-calendar">
-              <Calendar 
-                onChange={handleDateClick} 
-                // Recalculate stats when user changes the month view
-                onActiveStartDateChange={({ activeStartDate }) => calculateMonthlyStats(activeStartDate)}
-                value={selectedDate} 
-                tileClassName={getTileClassName} 
-                className="w-full border-none font-sans text-sm"
-              />
+            <div className="text-right">
+              <p className="text-xs text-slate-400 uppercase font-bold">Welcome back,</p>
+              <p className="text-lg font-bold text-white">{profile.name}</p>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="text-sm font-bold text-slate-500 uppercase mb-4">Details for {selectedDate.toDateString()}</h3>
-            {todayLog ? (
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-full ${todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>{todayLog.status && todayLog.status.toLowerCase() === 'late' ? <AlertTriangle size={24}/> : <CheckCircle size={24}/>}</div>
-                <div>
-                  <h4 className="font-bold text-lg text-slate-800">You were {todayLog.status}</h4>
-                  <p className="text-slate-500 text-sm">Punch In Time: <span className="font-mono text-slate-700 font-bold">
-                    {new Date(todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span></p>
+          {/* Content Area */}
+          <div className="flex-1 overflow-auto p-8">
+            <div className="grid grid-cols-3 gap-8 h-full">
+              
+              {/* ===== MODERN iPhone-STYLE CALENDAR ===== */}
+              <div className="col-span-2 space-y-6">
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-600/50">
+                  
+                  {/* Calendar Header */}
+                  <div className="flex items-center justify-between mb-8">
+                    <button 
+                      onClick={previousMonth}
+                      className="p-2 hover:bg-slate-600/50 rounded-xl transition text-slate-300 hover:text-white"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <h2 className="text-2xl font-black text-white bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                      {monthName}
+                    </h2>
+                    <button 
+                      onClick={nextMonth}
+                      className="p-2 hover:bg-slate-600/50 rounded-xl transition text-slate-300 hover:text-white"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {/* Week Days Header */}
+                  <div className="grid grid-cols-7 gap-2 mb-4">
+                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+                      <div key={day} className="text-center text-xs font-bold text-slate-400 py-2 uppercase tracking-wider">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Days */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {calendarDays.map((date, idx) => {
+                      if (!date) {
+                        return <div key={`empty-${idx}`} className="aspect-square"></div>;
+                      }
+
+                      const status = getDateStatus(date);
+                      const isCurrentDay = isToday(date);
+                      
+                      let bgClass = 'bg-slate-700/30 text-slate-300 hover:bg-slate-600/50';
+                      let borderClass = 'border border-slate-600/30';
+                      let numberColor = 'text-slate-300';
+
+                      if (isCurrentDay) {
+                        bgClass = 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/50 hover:shadow-blue-500/70';
+                        borderClass = 'border border-slate-400/30';
+                        numberColor = 'text-white';
+                      } else if (status === 'present') {
+                        numberColor = 'text-green-400 font-bold';
+                        bgClass = 'bg-green-500/10 hover:bg-green-500/20 text-white';
+                        borderClass = 'border border-green-500/30 hover:border-green-500/50';
+                      } else if (status === 'late') {
+                        numberColor = 'text-orange-400 font-bold';
+                        bgClass = 'bg-orange-500/10 hover:bg-orange-500/20 text-white';
+                        borderClass = 'border border-orange-500/30 hover:border-orange-500/50';
+                      } else if (status === 'absent') {
+                        numberColor = 'text-red-400 font-bold';
+                        bgClass = 'bg-red-500/10 hover:bg-red-500/20 text-white';
+                        borderClass = 'border border-red-500/30 hover:border-red-500/50';
+                      }
+
+                      return (
+                        <button
+                          key={date.toString()}
+                          onClick={() => handleDateClick(date)}
+                          className={`aspect-square rounded-2xl flex items-center justify-center font-bold transition-all cursor-pointer transform hover:scale-105 ${bgClass} ${borderClass}`}
+                        >
+                          <span className={numberColor}>{date.getDate()}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Calendar Legend */}
+                  <div className="mt-6 pt-6 border-t border-slate-600/30 flex gap-6 justify-center text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg"></div>
+                      <span className="text-slate-300">Today</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-lg bg-green-500/30 border border-green-500/50"></div>
+                      <span className="text-slate-300">Present</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-lg bg-orange-500/30 border border-orange-500/50"></div>
+                      <span className="text-slate-300">Late</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-lg bg-red-500/30 border border-red-500/50"></div>
+                      <span className="text-slate-300">Absent</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details Card */}
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-slate-600/50">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Details for {selectedDate.toLocaleDateString()}</h3>
+                  {todayLog ? (
+                    <div className="flex items-center gap-4">
+                      <div className={`p-4 rounded-2xl ${todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                        {todayLog.status && todayLog.status.toLowerCase() === 'late' ? <AlertTriangle size={32}/> : <CheckCircle size={32}/>}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-2xl text-white">You were <span className={todayLog.status && todayLog.status.toLowerCase() === 'late' ? 'text-orange-400' : 'text-green-400'}>{todayLog.status}</span></h4>
+                        <p className="text-slate-400 text-sm mt-1">
+                          Check-in: <span className="font-bold text-slate-200">
+                            {new Date(todayLog.check_in_time || todayLog.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 italic text-center py-8">No attendance record for this day.</p>
+                  )}
                 </div>
               </div>
-            ) : (<p className="text-slate-400 italic">No attendance record for this day.</p>)}
-          </div>
 
-          {/* Stats Section */}
-          <div className="bg-slate-800 text-white p-6 rounded-2xl shadow-lg">
-            <h3 className="font-bold mb-4 flex items-center gap-2 text-slate-200"><BarChart3 size={20}/> Monthly Summary</h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-green-400 mb-1">{stats.present}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><CheckCircle size={12}/> Present</div></div>
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-orange-400 mb-1">{stats.late}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><AlertTriangle size={12}/> Late</div></div>
-              <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600"><div className="text-3xl font-bold text-red-400 mb-1">{stats.absent}</div><div className="text-xs text-slate-400 uppercase font-bold flex justify-center items-center gap-1"><XCircle size={12}/> Absent</div></div>
+              {/* ===== RIGHT SIDE: PERFORMANCE CARD ===== */}
+              <div className="col-span-1 space-y-6">
+                {/* Performance Score */}
+                <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-blue-400/30 flex flex-col h-64">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase mb-6">Performance Score</h3>
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    <div className="relative w-24 h-24 mb-4">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#334155" strokeWidth="8" />
+                        <circle 
+                          cx="50" 
+                          cy="50" 
+                          r="45" 
+                          fill="none" 
+                          stroke="url(#gradient)" 
+                          strokeWidth="8"
+                          strokeDasharray={`${(stats.present / (stats.present + stats.late + stats.absent || 1)) * 283} 283`}
+                          strokeLinecap="round"
+                        />
+                        <defs>
+                          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#3b82f6" />
+                            <stop offset="100%" stopColor="#06b6d4" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-3xl font-black text-white">
+                          {stats.present + stats.late === 0 ? 0 : Math.round((stats.present / (stats.present + stats.late + Math.max(stats.absent, 1))) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-slate-300 text-sm text-center">Attendance Rate</p>
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-5 border border-green-400/30 hover:border-green-400/50 transition">
+                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">Present Days</p>
+                    <p className="text-3xl font-black text-green-400">{stats.present}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 backdrop-blur-xl rounded-2xl p-5 border border-orange-400/30 hover:border-orange-400/50 transition">
+                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">Late Arrivals</p>
+                    <p className="text-3xl font-black text-orange-400">{stats.late}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-500/20 to-rose-500/20 backdrop-blur-xl rounded-2xl p-5 border border-red-400/30 hover:border-red-400/50 transition">
+                    <p className="text-xs text-slate-400 font-bold uppercase mb-1">Absent Days</p>
+                    <p className="text-3xl font-black text-red-400">{stats.absent}</p>
+                  </div>
+                </div>
+
+                {/* Info Card */}
+                <div className="bg-gradient-to-br from-slate-800/80 to-slate-700/80 backdrop-blur-xl rounded-2xl p-5 border border-slate-600/50">
+                  <p className="text-xs text-slate-400 font-bold uppercase mb-3">Current Month</p>
+                  <p className="text-2xl font-black text-white mb-2">{monthName}</p>
+                  <p className="text-xs text-slate-400">Total working days tracked</p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
